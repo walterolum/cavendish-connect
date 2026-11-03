@@ -1,0 +1,21 @@
+{
+  "name": "cav-connect",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CAV CONNECT - The digital marketplace and community platform for the Cavendish University Uganda community",
+  "workspaces": ["backend", "frontend"],
+  "scripts": {
+    "dev": "concurrently -n backend,frontend -c blue,green \"npm run dev --workspace backend\" \"npm run dev --workspace frontend\"",
+    "dev:backend": "npm run dev --workspace backend",
+    "dev:frontend": "npm run dev --workspace frontend",
+    "build": "npm run build --workspace backend && npm run build --workspace frontend",
+    "build:backend": "npm run build --workspace backend",
+    "build:frontend": "npm run build --workspace frontend",
+    "migrate": "npm run prisma:migrate --workspace backend",
+    "seed": "npm run prisma:seed --workspace backend",
+    "studio": "npm run prisma:studio --workspace backend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0"
+  }
+}

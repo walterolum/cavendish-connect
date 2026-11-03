@@ -1,0 +1,253 @@
+@import "tailwindcss";
+
+/* dark: utilities follow the in-app light/dark toggle (html.dark). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * CAV CONNECT design tokens.
+ * Every colour, radius, shadow and font the UI uses is defined here, so the
+ * brand can be re-themed in one place. Components use the Tailwind utilities
+ * these tokens generate (bg-brand-600, text-accent-500, shadow-card, ...).
+ */
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Plus Jakarta Sans', 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+  --font-script: 'Kalam', 'Segoe Script', cursive;
+
+  /* Brand: Cavendish University navy */
+  --color-brand-50: #eef3fc;
+  --color-brand-100: #d8e3f8;
+  --color-brand-200: #b4c8f0;
+  --color-brand-300: #82a2e2;
+  --color-brand-400: #4f78cf;
+  --color-brand-500: #2856b8;
+  --color-brand-600: #1442a3;
+  --color-brand-700: #0f378a;
+  --color-brand-800: #0c2c70;
+  --color-brand-900: #0a245c;
+  --color-brand-950: #06173d;
+
+  /* Accent: Cavendish gold */
+  --color-accent-50: #fffbeb;
+  --color-accent-100: #fff3c4;
+  --color-accent-200: #ffe68a;
+  --color-accent-300: #ffd84d;
+  --color-accent-400: #ffc81f;
+  --color-accent-500: #f5b301;
+  --color-accent-600: #cc8f00;
+  --color-accent-700: #9e6a02;
+
+  /* Surfaces */
+  --color-canvas: #f6f7f9;
+
+  /* Elevation */
+  --shadow-card: 0 1px 2px 0 rgb(16 24 40 / 0.04), 0 1px 3px 0 rgb(16 24 40 / 0.05);
+  --shadow-raised: 0 4px 8px -2px rgb(16 24 40 / 0.06), 0 12px 24px -6px rgb(16 24 40 / 0.10);
+  --shadow-overlay: 0 24px 48px -12px rgb(16 24 40 / 0.25);
+
+  /* Motion */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --animate-fade-in: fade-in 180ms var(--ease-out-soft);
+  --animate-pop-in: pop-in 200ms var(--ease-out-soft);
+  --animate-shimmer: shimmer 1.6s linear infinite;
+  --animate-page-in: page-in 380ms var(--ease-out-soft) both;
+  --animate-fade-up: fade-up 600ms var(--ease-out-soft) both;
+  --animate-slide-in-left: slide-in-left 260ms var(--ease-out-soft) both;
+  --animate-ken-burns: ken-burns 18s ease-out both;
+  --animate-float: float 4s ease-in-out infinite;
+  --animate-wiggle: wiggle 2.8s ease-in-out infinite;
+  --animate-progress: progress linear both;
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes pop-in {
+    from { opacity: 0; transform: translateY(6px) scale(0.98); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes page-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(18px); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes slide-in-left {
+    from { transform: translateX(-100%); }
+    to { transform: none; }
+  }
+  @keyframes ken-burns {
+    from { transform: scale(1.08); }
+    to { transform: scale(1); }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+  @keyframes wiggle {
+    0%, 70%, 100% { transform: rotate(0deg); }
+    75% { transform: rotate(-10deg); }
+    85% { transform: rotate(8deg); }
+  }
+  @keyframes progress {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+  }
+  @keyframes shimmer {
+    from { background-position: -400px 0; }
+    to { background-position: 400px 0; }
+  }
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-canvas text-gray-900;
+    font-family: var(--font-sans);
+    font-feature-settings: 'cv11', 'ss01', 'ss03';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  /* One consistent keyboard focus style across the app */
+  :focus-visible {
+    outline: 2px solid var(--color-brand-500);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  input:focus-visible, textarea:focus-visible, select:focus-visible {
+    outline: none;
+  }
+
+  ::selection {
+    background: var(--color-brand-100);
+    color: var(--color-brand-900);
+  }
+
+  /* Hide number-input spinners; prices read cleaner without them */
+  input[type='number']::-webkit-inner-spin-button,
+  input[type='number']::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type='number'] {
+    -moz-appearance: textfield;
+  }
+}
+
+@layer utilities {
+  .skeleton {
+    background: linear-gradient(90deg, #eceef2 0%, #f5f6f8 40%, #eceef2 80%);
+    background-size: 800px 100%;
+    animation: var(--animate-shimmer);
+  }
+  /* Children appear one after another (cards, tiles, list rows). */
+  .stagger > * { animation: var(--animate-fade-up); }
+  .stagger > *:nth-child(1) { animation-delay: 30ms; }
+  .stagger > *:nth-child(2) { animation-delay: 90ms; }
+  .stagger > *:nth-child(3) { animation-delay: 150ms; }
+  .stagger > *:nth-child(4) { animation-delay: 210ms; }
+  .stagger > *:nth-child(5) { animation-delay: 270ms; }
+  .stagger > *:nth-child(6) { animation-delay: 330ms; }
+  .stagger > *:nth-child(7) { animation-delay: 390ms; }
+  .stagger > *:nth-child(8) { animation-delay: 450ms; }
+  .stagger > *:nth-child(n+9) { animation-delay: 500ms; }
+
+  /* Card hover: lifts gently and casts a deeper shadow. */
+  .lift {
+    transition: transform 280ms var(--ease-out-soft), box-shadow 280ms var(--ease-out-soft), border-color 200ms;
+  }
+  .lift:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-raised);
+  }
+
+  .font-script { font-family: var(--font-script); }
+
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { scrollbar-width: none; }
+  .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/*
+ * Dark mode. The grey ramp is flipped so every existing utility
+ * (text-gray-900, bg-gray-50, border-gray-200 ...) adapts automatically;
+ * white surfaces and a few fixed tints are remapped below.
+ */
+html.dark {
+  color-scheme: dark;
+  --color-canvas: #070f20;
+  --color-gray-50: #0e1830;
+  --color-gray-100: #152240;
+  --color-gray-200: #1f2e50;
+  --color-gray-300: #314266;
+  --color-gray-400: #6d7c9c;
+  --color-gray-500: #8f9bb6;
+  --color-gray-600: #aeb8cd;
+  --color-gray-700: #c9d1e0;
+  --color-gray-800: #dfe5ef;
+  --color-gray-900: #eef2f8;
+  --color-gray-950: #f8fafc;
+  --color-brand-50: #12244b;
+  --color-brand-100: #183062;
+  --shadow-card: 0 1px 2px 0 rgb(0 0 0 / 0.4);
+  --shadow-raised: 0 12px 28px -8px rgb(0 0 0 / 0.6);
+  --surface: #0c1630;
+}
+html.dark .bg-white { background-color: var(--surface); }
+html.dark .bg-white\/95 { background-color: rgb(12 22 48 / 0.95); }
+html.dark .bg-white\/90 { background-color: rgb(12 22 48 / 0.9); }
+html.dark .bg-white\/80 { background-color: rgb(12 22 48 / 0.8); }
+html.dark .hover\:bg-white:hover { background-color: var(--color-gray-100); }
+html.dark .bg-gray-900 { background-color: #1d2b4d; }
+html.dark .text-brand-600,
+html.dark .text-brand-700,
+html.dark .text-brand-800 { color: #a9bff2; }
+html.dark .skeleton { background-image: linear-gradient(90deg, #152240 0%, #1c2b4d 40%, #152240 80%); }
+html.dark ::selection { background: #1f3a7a; color: #fff; }
+html.theme-transition,
+html.theme-transition *,
+html.theme-transition *::before,
+html.theme-transition *::after {
+  transition: background-color 300ms ease, border-color 300ms ease, color 300ms ease !important;
+}
+
+/* Referenced from inline styles / arbitrary classes, so defined outside the theme too. */
+@keyframes progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+
+/* A freshly posted item pops in with a gold glow that fades out. */
+@keyframes just-posted {
+  0% { opacity: 0; transform: translateY(-14px) scale(0.96); box-shadow: 0 0 0 0 rgb(255 200 31 / 0); }
+  35% { opacity: 1; transform: none; box-shadow: 0 0 0 4px rgb(255 200 31 / 0.85); }
+  100% { box-shadow: 0 0 0 2px rgb(255 200 31 / 0.55); }
+}
+.just-posted { animation: just-posted 900ms var(--ease-out-soft) both; }
