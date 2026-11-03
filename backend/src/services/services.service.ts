@@ -1,3 +1,4 @@
+import { storeImages } from '../utils/storage';
 import { newPostStatus, editedPostStatus } from '../utils/settings';
 import { pickDefined, canViewListing, Viewer } from '../utils/helpers';
 import prisma from '../config/database';
@@ -291,12 +292,13 @@ export class ServicesService {
     if (service.userId !== userId) throw new ForbiddenError('Not your service');
 
     const existing = await prisma.serviceImage.count({ where: { serviceId } });
+    const urls = await storeImages(files);
     const images = await Promise.all(
       files.map((file, index) =>
         prisma.serviceImage.create({
           data: {
             serviceId,
-            url: `/uploads/${file.filename}`,
+            url: urls[index],
             alt: file.originalname,
             sortOrder: existing + index,
             isPrimary: existing === 0 && index === 0,

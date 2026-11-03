@@ -1,3 +1,4 @@
+import { storeImages } from '../utils/storage';
 import { newPostStatus, editedPostStatus } from '../utils/settings';
 import { pickDefined, canViewListing, Viewer } from '../utils/helpers';
 import prisma from '../config/database';
@@ -253,12 +254,13 @@ export class MarketplaceService {
     if (listing.userId !== userId) throw new ForbiddenError('Not your listing');
 
     const existing = await prisma.marketplaceListingImage.count({ where: { listingId } });
+    const urls = await storeImages(files);
     const images = await Promise.all(
       files.map((file, index) =>
         prisma.marketplaceListingImage.create({
           data: {
             listingId,
-            url: `/uploads/${file.filename}`,
+            url: urls[index],
             alt: file.originalname,
             sortOrder: existing + index,
             isPrimary: existing === 0 && index === 0,

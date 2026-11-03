@@ -1,0 +1,3 @@
+# Database migrations are checksummed; keep them byte-identical on every OS.
+*.sql text eol=lf
+*.toml text eol=lf

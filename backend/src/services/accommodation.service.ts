@@ -1,3 +1,4 @@
+import { storeImages } from '../utils/storage';
 import { newPostStatus, editedPostStatus } from '../utils/settings';
 import { pickDefined, canViewListing, Viewer } from '../utils/helpers';
 import prisma from '../config/database';
@@ -339,12 +340,13 @@ export class AccommodationService {
     if (property.userId !== userId) throw new ForbiddenError('Not your property');
 
     const existing = await prisma.propertyImage.count({ where: { propertyId } });
+    const urls = await storeImages(files);
     const images = await Promise.all(
       files.map((file, index) =>
         prisma.propertyImage.create({
           data: {
             propertyId,
-            url: `/uploads/${file.filename}`,
+            url: urls[index],
             alt: file.originalname,
             sortOrder: existing + index,
             isPrimary: existing === 0 && index === 0,

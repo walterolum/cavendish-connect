@@ -1,6 +1,27 @@
 # Deployment
 
-## Quick start: Railway (recommended)
+## Free hosting: Render + Aiven + Cloudinary
+
+Costs nothing. Trade-off: the free Render service sleeps after 15 minutes
+without visitors, and the next visit takes about a minute to wake it.
+
+1. **Photos — Cloudinary.** Sign up at https://cloudinary.com (free). On the
+   dashboard, copy the **API environment variable** (starts with `cloudinary://`).
+2. **Database — Aiven.** Sign up at https://aiven.io, create a **MySQL** service on
+   the **Free** plan (pick a European region). When it is running, copy the
+   **Service URI** and change its ending from `?ssl-mode=REQUIRED` to
+   `?sslaccept=accept_invalid_certs` (Prisma's spelling; the connection is still encrypted).
+3. **App — Render.** Sign up at https://render.com with GitHub. Choose
+   **New → Blueprint**, pick this repository, and paste the values it asks for:
+   `DATABASE_URL` (step 2), `CLOUDINARY_URL` (step 1), `ADMIN_EMAIL`, `ADMIN_PASSWORD`.
+   `render.yaml` sets everything else, including random JWT secrets.
+4. Wait for the first deploy (about 5–10 minutes), open the `onrender.com`
+   address, and sign in with your admin email and password.
+5. Optional: to stop it sleeping, add a free monitor at https://uptimerobot.com
+   that requests `https://<your-app>.onrender.com/api/health` every 5 minutes.
+
+## Paid alternative: Railway (always on)
+
 
 The repository deploys as **one service** (the Dockerfile at the root builds the
 website and the API together) plus a **MySQL** database and a **volume** for

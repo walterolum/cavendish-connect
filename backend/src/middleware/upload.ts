@@ -3,6 +3,7 @@ import multer from 'multer';
 import { v4 as uuidv4 } from 'uuid';
 import { config } from '../config';
 import { BadRequestError } from '../utils/errors';
+import { usesCloudinary } from '../utils/storage';
 
 // Extension comes from the checked image type, never from the uploaded file name,
 // so a file can't be stored as .html/.svg/.js and then served from our origin.
@@ -14,9 +15,10 @@ const EXTENSIONS: Record<string, string> = {
   'image/gif': '.gif',
 };
 
-fs.mkdirSync(config.storage.path, { recursive: true });
+// With Cloudinary, files stay in memory until they are sent there; otherwise they go to disk.
+if (!usesCloudinary) fs.mkdirSync(config.storage.path, { recursive: true });
 
-const storage = multer.diskStorage({
+const storage = usesCloudinary ? multer.memoryStorage() : multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, config.storage.path);
   },

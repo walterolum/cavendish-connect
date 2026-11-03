@@ -1,3 +1,11 @@
+-- Hosted MySQL 8 (e.g. Aiven) refuses tables without a primary key by default,
+-- and Prisma's join table _PermissionToRole has none. Relax that rule for this
+-- script only. MariaDB and MySQL 5.x don't have the setting, so skip it there.
+SET @cav_pk_stmt = IF(VERSION() LIKE '%MariaDB%' OR VERSION() LIKE '5.%', 'DO 0', 'SET SESSION sql_require_primary_key = 0');
+PREPARE cav_pk FROM @cav_pk_stmt;
+EXECUTE cav_pk;
+DEALLOCATE PREPARE cav_pk;
+
 -- CreateTable
 CREATE TABLE `Role` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
