@@ -9,7 +9,8 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY backend/package.json backend/
 COPY frontend/package.json frontend/
-RUN npm ci --no-audit --no-fund
+COPY scripts/fix-native-deps.mjs scripts/
+RUN npm ci --no-audit --no-fund && node scripts/fix-native-deps.mjs
 
 COPY backend backend
 COPY frontend frontend
