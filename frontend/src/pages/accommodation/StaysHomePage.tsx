@@ -31,6 +31,7 @@ import { PROPERTY_TYPE_LABELS } from '../../lib/labels';
 import PropertyCard from '../../components/listing/PropertyCard';
 import { CardGridSkeleton, EmptyState, ErrorState } from '../../components/ui/loading';
 import { ButtonLink } from '../../components/ui/button';
+import { Brand, useBrand } from '../../lib/settings';
 
 const TYPES = [
   { key: '', label: 'All stays', icon: LuLayoutGrid },
@@ -53,11 +54,11 @@ const BUDGETS = [
   { value: '1200000', label: `Up to ${formatMoney(1200000)}` },
 ];
 
-const TRUST = [
+const trustFor = (b: Brand) => [
   { icon: LuShieldCheck, title: 'Checked listings', text: 'Every place is reviewed by our team before it goes live.' },
   { icon: LuCalendarCheck, title: 'Flexible viewing', text: 'Message landlords directly and arrange a viewing that suits you.' },
-  { icon: LuHeadphones, title: 'Campus support', text: 'The Cavendish Connect team is here if anything goes wrong.' },
-  { icon: LuKeyRound, title: 'List your place', text: 'Landlords: reach hundreds of Cavendish students every term.', to: '/accommodation/create' },
+  { icon: LuHeadphones, title: 'Campus support', text: `The ${b.appName} team is here if anything goes wrong.` },
+  { icon: LuKeyRound, title: 'List your place', text: `Landlords: reach hundreds of ${b.universityShort} students every term.`, to: '/accommodation/create' },
 ];
 
 function SearchField({ icon: Icon, label, children, className }: { icon: typeof LuMapPin; label: string; children: React.ReactNode; className?: string }) {
@@ -74,6 +75,8 @@ function SearchField({ icon: Icon, label, children, className }: { icon: typeof 
 
 export default function StaysHomePage() {
   useDocumentTitle('Accommodation');
+  const brand = useBrand();
+  const TRUST = trustFor(brand);
   const navigate = useNavigate();
   const [where, setWhere] = useState('');
   const [type, setType] = useState('');
@@ -132,7 +135,7 @@ export default function StaysHomePage() {
       {/* Hero */}
       <section className="relative overflow-hidden">
         <img
-          src="/images/stays-hero-alt.jpg"
+          src={brand.heroStays}
           alt=""
           className="animate-ken-burns absolute inset-0 h-full w-full object-cover object-[65%_center]"
           fetchPriority="high"
@@ -142,10 +145,10 @@ export default function StaysHomePage() {
           <div className="stagger max-w-xl">
             <p className="text-sm font-semibold text-accent-600 dark:text-accent-400">Live near campus. Feel at home.</p>
             <h1 className="mt-3 text-4xl leading-[1.05] font-extrabold text-brand-950 sm:text-[56px] dark:text-white">
-              Find your perfect stay near Cavendish
+              Find your perfect stay near {brand.universityShort}
             </h1>
             <p className="mt-5 max-w-md text-base text-gray-700 sm:text-lg dark:text-gray-700">
-              Hostels, rooms and apartments around Kampala, listed by trusted landlords and checked by our team.
+              Hostels, rooms and apartments around {brand.city}, listed by trusted landlords and checked by our team.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <ButtonLink to="/accommodation/search" size="lg" className="group">

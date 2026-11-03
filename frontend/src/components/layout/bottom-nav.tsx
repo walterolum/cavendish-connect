@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { FiGrid, FiHome, FiMessageSquare, FiPlus, FiUser } from 'react-icons/fi';
 import { useAuthStore } from '../../store/auth';
@@ -7,6 +8,13 @@ import { CountBadge } from './navbar';
 
 /** Mobile tab bar. Active state matches whole sections, e.g. /messages/12 lights up Messages. */
 export function BottomNav() {
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty('--bottom-nav', '64px');
+    return () => {
+      root.style.removeProperty('--bottom-nav');
+    };
+  }, []);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const unread = useUnreadCounts();
 

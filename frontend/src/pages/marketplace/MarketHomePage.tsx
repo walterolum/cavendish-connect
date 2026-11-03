@@ -38,6 +38,7 @@ import MarketCard from '../../components/market/MarketCard';
 import { HubHero, HubSlide } from '../../components/hub/HubHero';
 import { CardGridSkeleton, EmptyState, ErrorState, Skeleton } from '../../components/ui/loading';
 import type { Category } from '../../types';
+import { Brand, useBrand } from '../../lib/settings';
 
 /** Picks an icon from the category's name, so new categories still get a sensible one. */
 const ICONS: [RegExp, typeof LuLaptop][] = [
@@ -60,13 +61,13 @@ const ICONS: [RegExp, typeof LuLaptop][] = [
 ];
 const iconFor = (c: Category) => ICONS.find(([re]) => re.test(c.name))?.[1] ?? LuPackage;
 
-const SLIDES: HubSlide[] = [
+const slidesFor = (b: Brand): HubSlide[] => [
   {
-    eyebrow: 'Cavendish University',
+    eyebrow: b.universityName,
     title: 'Campus',
     highlight: 'Market',
     text: 'Buy and sell second-hand items easily within our campus community.',
-    image: '/images/campus-hero.jpg',
+    image: b.heroMarket,
     position: 'center 35%',
     primary: { to: '/marketplace/browse', label: 'Browse Items', icon: LuShoppingCart },
     secondary: { to: '/marketplace/create', label: 'Post an Ad', icon: LuCirclePlus },
@@ -85,7 +86,7 @@ const SLIDES: HubSlide[] = [
     title: 'Verified',
     highlight: 'Members Only',
     text: 'Every account is created by the admin office. Meet in public campus spaces and inspect before you pay.',
-    image: '/images/campus-hero.jpg',
+    image: b.heroMarket,
     position: 'center 70%',
     primary: { to: '/help#safety', label: 'Safety Tips' },
     secondary: { to: '/marketplace/create', label: 'Post an Ad', icon: LuCirclePlus },
@@ -98,6 +99,8 @@ function Panel({ children, className }: { children: React.ReactNode; className?:
 
 export default function MarketHomePage() {
   useDocumentTitle('Campus Market');
+  const brand = useBrand();
+  const SLIDES = slidesFor(brand);
 
   const categoriesQ = useQuery({ queryKey: ['marketplace', 'categories'], queryFn: () => categoriesApi.getCategories(), staleTime: 5 * 60_000 });
   const latestQ = useQuery({

@@ -52,6 +52,10 @@ export function HubHero({ slides, script, label }: { slides: HubSlide[]; script:
           <img
             src={slide.image}
             alt=""
+            // The first photo is what people see first; the rest load in the background.
+            loading={n === 0 ? 'eager' : 'lazy'}
+            fetchPriority={n === 0 ? 'high' : 'low'}
+            decoding="async"
             className={cn('h-full w-full object-cover', n === i && 'animate-ken-burns')}
             style={{ objectPosition: slide.position ?? 'center' }}
           />

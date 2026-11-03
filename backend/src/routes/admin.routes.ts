@@ -3,6 +3,12 @@ import { body, param, query } from 'express-validator';
 import { adminController } from '../controllers/admin.controller';
 import { authenticate, authorize } from '../middleware/auth';
 import { validate } from '../middleware/validate';
+import { uploadSingle } from '../middleware/upload';
+import { storeImages } from '../utils/storage';
+import { auditLog } from '../middleware/audit';
+import { BadRequestError } from '../utils/errors';
+import { successResponse } from '../utils/response';
+import { AuthRequest } from '../middleware/auth';
 
 const router = Router();
 
@@ -110,9 +116,21 @@ router.get('/settings', adminController.getSettings);
 router.put('/settings', [
   body('settings').isArray({ min: 1 }).withMessage('Settings array is required'),
   body('settings.*.key').trim().notEmpty().withMessage('Setting key is required'),
-  body('settings.*.value').trim().notEmpty().withMessage('Setting value is required'),
+  body('settings.*.value').isString().withMessage('Setting value must be text').trim(),
   validate,
 ], adminController.updateSettings);
+
+// Logo and banner photos for Admin > Appearance.
+router.post('/branding/image', uploadSingle, async (req: AuthRequest, res, next) => {
+  try {
+    if (!req.file) throw new BadRequestError('Choose an image to upload');
+    const [url] = await storeImages([req.file]);
+    await auditLog(req.user!.userId, 'UPLOAD', 'SETTINGS', null, undefined, undefined, { url });
+    res.status(201).json(successResponse({ url }, 'Image uploaded'));
+  } catch (error) {
+    next(error);
+  }
+});
 
 router.get('/audit-logs', [
   query('page').optional().isInt({ min: 1 }),

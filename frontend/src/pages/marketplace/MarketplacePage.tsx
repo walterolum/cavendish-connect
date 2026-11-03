@@ -10,8 +10,10 @@ import { PageHeader } from '../../components/ui/page';
 import { CardGridSkeleton, EmptyState, ErrorState } from '../../components/ui/loading';
 import MarketCard from '../../components/market/MarketCard';
 import { ActiveFilter, BrowseLayout, FilterGroup, OptionList, PriceRange, useUrlFilters } from '../../components/browse/Browse';
+import { useBrand } from '../../lib/settings';
 
 export default function MarketplacePage() {
+  const brand = useBrand();
   useDocumentTitle('Browse items');
   const f = useUrlFilters();
   const search = f.get('search');
@@ -63,7 +65,7 @@ export default function MarketplacePage() {
     <div className="mx-auto max-w-[1440px]">
       <PageHeader
         title="Browse Items"
-        description="Second-hand and new items from verified members of the Cavendish community."
+        description={`Second-hand and new items from verified members of the ${brand.universityShort} community.`}
         actions={
           <ButtonLink to="/marketplace/create">
             <FiPlus className="h-4 w-4" />

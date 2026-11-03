@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { FiCheckCircle, FiClock, FiEye, FiLayers, FiMapPin, FiPackage, FiSearch } from 'react-icons/fi';
@@ -5,7 +6,9 @@ import { marketplaceApi } from '../../services/marketplace.service';
 import { getErrorMessage, isNotFound } from '../../lib/api';
 import { formatMoney, formatRelativeTime } from '../../lib/utils';
 import { CONDITION_LABELS, label } from '../../lib/labels';
-import { useDocumentTitle, useFavoriteToggle } from '../../lib/hooks';
+import { useAuthGate, useDocumentTitle, useFavoriteToggle } from '../../lib/hooks';
+import { OrderDialog } from '../../components/orders/OrderDialog';
+import { LocationMap } from '../../components/listing/LocationMap';
 import { useAuthStore } from '../../store/auth';
 import { Badge, StatusBadge } from '../../components/ui/badge';
 import { ButtonLink } from '../../components/ui/button';
@@ -25,12 +28,16 @@ import {
 } from '../../components/listing/DetailParts';
 import { ReviewsSection } from '../../components/listing/ReviewsSection';
 import ReportModal, { useReportDialog } from '../../components/report/ReportModal';
+import { useBrand } from '../../lib/settings';
 
 export default function ListingDetailPage() {
+  const brand = useBrand();
   const { slug } = useParams<{ slug: string }>();
   const me = useAuthStore((s) => s.user);
   const key = ['marketplace', 'listing', slug];
   const report = useReportDialog();
+  const [ordering, setOrdering] = useState(false);
+  const gate = useAuthGate();
 
   const { data: listing, isLoading, error, refetch } = useQuery({
     queryKey: key,
@@ -73,6 +80,7 @@ export default function ListingDetailPage() {
         <div className="min-w-0">
           <ImageGallery images={listing.images} title={listing.title} fallbackIcon={FiPackage} />
           <DescriptionBlock>{listing.description}</DescriptionBlock>
+          <LocationMap location={listing.location} title="Where to find it" />
 
           <section className="mt-8">
             <h2 className="text-lg font-semibold text-gray-900">Details</h2>
@@ -94,6 +102,13 @@ export default function ListingDetailPage() {
 
         <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
           <ActionPanel
+            priceText={formatMoney(listing.price, listing.currency)}
+            order={{
+              label: 'Order now',
+              disabled: listing.status !== 'ACTIVE' || listing.quantity < 1,
+              note: undefined,
+              onClick: () => gate('Sign in to place an order') && setOrdering(true),
+            }}
             title={listing.title}
             badges={
               <>
@@ -119,7 +134,7 @@ export default function ListingDetailPage() {
                     {listing.viewCount} view{listing.viewCount !== 1 ? 's' : ''}
                   </Fact>
                 )}
-                {listing.status === 'ACTIVE' && <Fact icon={FiCheckCircle}>Reviewed by CAV CONNECT moderators</Fact>}
+                {listing.status === 'ACTIVE' && <Fact icon={FiCheckCircle}>Moderated by the {brand.appName} team</Fact>}
               </>
             }
             owner={listing.user}
@@ -133,6 +148,28 @@ export default function ListingDetailPage() {
           <SafetyTips />
         </aside>
       </div>
+
+      <OrderDialog
+
+        open={ordering}
+
+        onClose={() => setOrdering(false)}
+
+        targetType="LISTING"
+
+        targetId={listing.id}
+
+        title={listing.title}
+
+        price={listing.price}
+
+        currency={listing.currency}
+
+        maxQuantity={listing.quantity}
+
+        defaultPlace={listing.location}
+
+      />
 
       <ReportModal open={report.open} onClose={report.close} targetType="LISTING" targetId={listing.id} targetLabel="Listing" />
     </div>

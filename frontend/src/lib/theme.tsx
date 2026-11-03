@@ -20,7 +20,8 @@ export function setTheme(theme: Theme) {
   } catch {
     /* private mode: the choice just isn't remembered */
   }
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#070f20' : '#0a245c');
+  const brandColor = getComputedStyle(root).getPropertyValue('--color-brand-900').trim() || '#0a245c';
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#070f20' : brandColor);
   window.setTimeout(() => root.classList.remove('theme-transition'), 350);
   listeners.forEach((l) => l());
 }

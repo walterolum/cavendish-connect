@@ -21,6 +21,7 @@ import { StatCard } from '../../components/ui/stat';
 import { Tabs } from '../../components/ui/tabs';
 import { primaryImage } from '../../components/listing/CardShell';
 import { servicePrice } from '../../components/listing/ServiceCard';
+import { useBrand } from '../../lib/settings';
 
 type Kind = 'listings' | 'services' | 'properties';
 
@@ -43,6 +44,7 @@ const KIND = {
 } as const;
 
 export default function DashboardPage() {
+  const brandName = useBrand().appName;
   useDocumentTitle('My posts');
   const user = useAuthStore((s) => s.user);
   const queryClient = useQueryClient();
@@ -187,7 +189,7 @@ export default function DashboardPage() {
         onConfirm={() => toDelete && remove.mutate(toDelete)}
         loading={remove.isPending}
         title="Delete this post?"
-        message={<>“{toDelete?.title}” will be removed from CAV CONNECT. This can't be undone.</>}
+        message={<>“{toDelete?.title}” will be removed from {brandName}. This can't be undone.</>}
         confirmLabel="Delete"
       />
     </Page>

@@ -2,8 +2,10 @@ import { FiCompass } from 'react-icons/fi';
 import { useDocumentTitle } from '../../lib/hooks';
 import { ButtonLink } from '../../components/ui/button';
 import { EmptyState } from '../../components/ui/loading';
+import { useBrand } from '../../lib/settings';
 
 export default function NotFoundPage() {
+  const brand = useBrand();
   useDocumentTitle('Page not found');
   return (
     <div className="flex min-h-[60vh] items-center justify-center">
@@ -14,7 +16,7 @@ export default function NotFoundPage() {
       >
         <ButtonLink to="/">Go to home</ButtonLink>
         <ButtonLink to="/explore" variant="outline">
-          Search CAV CONNECT
+          Search {brand.appName}
         </ButtonLink>
       </EmptyState>
     </div>

@@ -17,12 +17,13 @@ import {
   FiHome,
   FiPhone,
   FiLogIn,
+  FiShoppingBag,
 } from 'react-icons/fi';
-import { usePublicSettings } from '../../lib/settings';
+import { useBrand, usePublicSettings } from '../../lib/settings';
 import { ThemeToggle } from '../../lib/theme';
 import { useAuthStore, isAdmin } from '../../store/auth';
 import { authApi } from '../../services/auth.service';
-import { useUnreadCounts } from '../../lib/hooks';
+import { useOrderCounts, useUnreadCounts } from '../../lib/hooks';
 import { cn } from '../../lib/utils';
 import { Avatar, fullName } from '../ui/avatar';
 import { ButtonLink } from '../ui/button';
@@ -39,11 +40,12 @@ export const PRIMARY_NAV = [
 /** Slim info strip above the main navigation (location, quick links, support line). */
 export function UtilityBar() {
   const { data: settings } = usePublicSettings();
+  const brand = useBrand();
   return (
     <div className="hidden bg-brand-950 text-[13px] text-white/80 sm:block">
       <div className="mx-auto flex h-9 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         <span className="flex items-center gap-1.5">
-          <FiMapPin className="h-3.5 w-3.5 text-accent-400" /> Cavendish University Uganda, Kampala
+          <FiMapPin className="h-3.5 w-3.5 text-accent-400" /> {brand.universityName}, {brand.city}
         </span>
         <Link to="/accommodation/create" className="hidden items-center gap-1.5 transition-colors hover:text-accent-300 md:flex">
           <FiHome className="h-3.5 w-3.5 text-accent-400" /> List your room or hostel
@@ -89,6 +91,7 @@ export function useSignOut() {
 }
 
 export function AccountMenu() {
+  const orders = useOrderCounts();
   const user = useAuthStore((s) => s.user);
   const signOut = useSignOut();
   const [open, setOpen] = useState(false);
@@ -139,6 +142,12 @@ export function AccountMenu() {
             </div>
           </div>
           <div className="my-1 h-px bg-gray-100" />
+          <Link role="menuitem" to="/orders" className={item}>
+            <FiShoppingBag className="h-4 w-4 text-gray-400" /> Orders
+            {orders.incoming + orders.mine > 0 && (
+              <span className="ml-auto rounded-full bg-brand-600 px-2 py-0.5 text-[11px] font-bold text-white tabular-nums">{orders.incoming + orders.mine}</span>
+            )}
+          </Link>
           <Link role="menuitem" to="/dashboard" className={item}>
             <FiGrid className="h-4 w-4 text-gray-400" /> My posts
           </Link>
@@ -164,6 +173,7 @@ export function AccountMenu() {
 }
 
 export function Navbar() {
+  const brand = useBrand();
   const { user, isAuthenticated } = useAuthStore();
   const unread = useUnreadCounts();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -282,6 +292,9 @@ export function Navbar() {
                     <span className="rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white">{unread.notifications}</span>
                   )}
                 </Link>
+                <Link to="/orders" className="rounded-xl px-3 py-2.5 text-[15px] font-medium text-gray-700 hover:bg-gray-50">
+                  Orders
+                </Link>
                 <Link to="/dashboard" className="rounded-xl px-3 py-2.5 text-[15px] font-medium text-gray-700 hover:bg-gray-50">
                   My posts
                 </Link>
@@ -302,7 +315,7 @@ export function Navbar() {
                 <ButtonLink to="/login" className="w-full">
                   Log in
                 </ButtonLink>
-                <p className="text-center text-xs text-gray-500">Accounts are issued by the Cavendish Connect admin office.</p>
+                <p className="text-center text-xs text-gray-500">Accounts are issued by the {brand.appName} admin office.</p>
               </div>
             )}
           </div>

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { FiBriefcase, FiCalendar, FiClock, FiExternalLink, FiEye, FiMapPin, FiSearch } from 'react-icons/fi';
@@ -5,7 +6,9 @@ import { servicesApi } from '../../services/listing.service';
 import { getErrorMessage, isNotFound } from '../../lib/api';
 import { formatMoney, formatRelativeTime } from '../../lib/utils';
 import { PRICE_TYPE_LABELS, label } from '../../lib/labels';
-import { useDocumentTitle, useFavoriteToggle } from '../../lib/hooks';
+import { useAuthGate, useDocumentTitle, useFavoriteToggle } from '../../lib/hooks';
+import { OrderDialog } from '../../components/orders/OrderDialog';
+import { LocationMap } from '../../components/listing/LocationMap';
 import { useAuthStore } from '../../store/auth';
 import { Badge, StatusBadge } from '../../components/ui/badge';
 import { ButtonLink } from '../../components/ui/button';
@@ -32,6 +35,8 @@ export default function ServiceDetailPage() {
   const me = useAuthStore((s) => s.user);
   const key = ['services', 'detail', slug];
   const report = useReportDialog();
+  const [ordering, setOrdering] = useState(false);
+  const gate = useAuthGate();
 
   const { data: service, isLoading, error, refetch } = useQuery({
     queryKey: key,
@@ -71,6 +76,7 @@ export default function ServiceDetailPage() {
         <div className="min-w-0">
           <ImageGallery images={service.images} title={service.title} fallbackIcon={FiBriefcase} />
           <DescriptionBlock title="About this service">{service.description}</DescriptionBlock>
+          <LocationMap location={service.location} title="Where this service is offered" />
 
           {portfolios.length > 0 && (
             <section className="mt-8">
@@ -118,6 +124,13 @@ export default function ServiceDetailPage() {
 
         <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
           <ActionPanel
+            priceText={service.priceMin != null ? `From ${formatMoney(service.priceMin, service.currency)}` : 'Price on request'}
+            order={{
+              label: 'Book this service',
+              disabled: service.status !== 'ACTIVE',
+              note: undefined,
+              onClick: () => gate('Sign in to place an order') && setOrdering(true),
+            }}
             title={service.title}
             badges={
               <>
@@ -154,6 +167,24 @@ export default function ServiceDetailPage() {
           <SafetyTips />
         </aside>
       </div>
+
+      <OrderDialog
+
+        open={ordering}
+
+        onClose={() => setOrdering(false)}
+
+        targetType="SERVICE"
+
+        targetId={service.id}
+
+        title={service.title}
+
+        price={service.priceMin}
+
+        currency={service.currency}
+
+      />
 
       <ReportModal open={report.open} onClose={report.close} targetType="SERVICE" targetId={service.id} targetLabel="Service" />
     </div>

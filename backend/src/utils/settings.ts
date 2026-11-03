@@ -22,12 +22,35 @@ export async function isMaintenanceMode() {
   return (await getSettings())['maintenance.mode'] === 'true';
 }
 
+/** Appearance values with defaults, used by the site, /brand.css and page meta tags. */
+export async function getBrand() {
+  const s = await getSettings();
+  return {
+    appName: s['platform.name'] || 'Cavendish Connect',
+    tagline: s['platform.tagline'] || 'Connect. Buy. Sell. Serve. Find.',
+    universityName: s['brand.university_name'] || 'Cavendish University Uganda',
+    universityShort: s['brand.university_short'] || 'Cavendish',
+    location: s['brand.location'] || 'Kampala, Uganda',
+    primaryColor: s['brand.primary_color'] || '#1442a3',
+    accentColor: s['brand.accent_color'] || '#ffc81f',
+    logoUrl: s['brand.logo_url'] || '',
+    heroMarket: s['brand.hero_market'] || '/images/campus-hero.jpg',
+    heroServices: s['brand.hero_services'] || '/images/campus-hero.jpg',
+    heroStays: s['brand.hero_stays'] || '/images/stays-hero-alt.jpg',
+    seoDescription:
+      s['seo.description'] ||
+      'The campus marketplace, services hub and student accommodation platform. Buy, sell, hire and find a room from verified members.',
+  };
+}
+
 /** The settings that are safe to show to anyone, e.g. in the site footer. */
 export async function getPublicSettings() {
   const s = await getSettings();
+  const brand = await getBrand();
   return {
-    platformName: s['platform.name'] || 'CAV CONNECT',
-    tagline: s['platform.tagline'] || '',
+    brand,
+    platformName: brand.appName,
+    tagline: brand.tagline,
     currency: s['platform.currency'] || 'UGX',
     contactEmail: s['contact.email'] || '',
     contactPhone: s['contact.phone'] || '',

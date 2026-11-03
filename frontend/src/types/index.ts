@@ -72,6 +72,9 @@ export interface ListingOwner {
   bio?: string;
   location?: string;
   createdAt?: string;
+  /** Only sent to signed-in members. */
+  phone?: string | null;
+  email?: string | null;
   /** Approved verifications; non-empty means the owner is verified. */
   verificationRequests?: { type: string }[];
 }

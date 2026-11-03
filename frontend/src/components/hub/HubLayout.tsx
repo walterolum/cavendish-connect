@@ -3,15 +3,16 @@ import { Link, NavLink, useLocation, useNavigate, useSearchParams } from 'react-
 import { LuArrowLeft, LuBell, LuMenu, LuSearch, LuX } from 'react-icons/lu';
 import type { IconType } from 'react-icons';
 import { useAuthStore } from '../../store/auth';
-import { useUnreadCounts } from '../../lib/hooks';
+import { useOrderCounts, useUnreadCounts } from '../../lib/hooks';
 import { cn } from '../../lib/utils';
 import { ThemeToggle } from '../../lib/theme';
 import { RouteContent, MaintenanceBanner } from '../layout/layouts';
 import { AccountMenu } from '../layout/navbar';
 import { SidebarBrand } from '../layout/logo';
 import { ButtonLink } from '../ui/button';
+import { useBrand } from '../../lib/settings';
 
-export type HubNavItem = { to: string; label: string; icon: IconType; end?: boolean; badge?: 'messages' | 'notifications' };
+export type HubNavItem = { to: string; label: string; icon: IconType; end?: boolean; badge?: 'messages' | 'notifications' | 'orders' };
 
 /** Everything that differs between the Campus Market and the Services Hub. */
 export interface HubConfig {
@@ -29,6 +30,9 @@ export interface HubConfig {
 
 function Sidebar({ config, onNavigate }: { config: HubConfig; onNavigate?: () => void }) {
   const unread = useUnreadCounts();
+  const orderCounts = useOrderCounts();
+  const badges = { ...unread, orders: orderCounts.incoming };
+  const brand = useBrand();
   return (
     <div className="relative flex h-full flex-col overflow-hidden bg-brand-900 text-white">
       <div className="pointer-events-none absolute -top-24 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-brand-500/30 blur-3xl" />
@@ -39,7 +43,7 @@ function Sidebar({ config, onNavigate }: { config: HubConfig; onNavigate?: () =>
 
       <nav className="no-scrollbar relative flex-1 space-y-1 overflow-y-auto px-3" aria-label={config.name}>
         {config.nav.map((item) => {
-          const count = item.badge ? unread[item.badge] : 0;
+          const count = item.badge ? badges[item.badge] : 0;
           return (
             <NavLink
               key={item.label}
@@ -70,7 +74,7 @@ function Sidebar({ config, onNavigate }: { config: HubConfig; onNavigate?: () =>
       <div className="relative mx-3 mt-4">{config.promo}</div>
 
       <div className="relative px-6 py-5 text-center">
-        <p className="text-sm font-semibold">Cavendish University</p>
+        <p className="text-sm font-semibold">{brand.universityName}</p>
         <p className="mt-0.5 text-[11px] text-white/60">© {new Date().getFullYear()}. All rights reserved.</p>
       </div>
     </div>

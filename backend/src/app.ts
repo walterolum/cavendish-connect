@@ -7,6 +7,7 @@ import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import hpp from 'hpp';
 import path from 'path';
+import fs from 'fs';
 
 import { config } from './config';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
@@ -26,9 +27,12 @@ import paymentRoutes from './routes/payment.routes';
 import reportsRoutes from './routes/reports.routes';
 import verificationsRoutes from './routes/verifications.routes';
 import eventsRoutes from './routes/events.routes';
+import ordersRoutes from './routes/orders.routes';
 import { maintenanceGuard } from './middleware/maintenance';
 import prisma from './config/database';
-import { getPublicSettings } from './utils/settings';
+import { getBrand, getPublicSettings } from './utils/settings';
+import { brandCss, isHexColor } from './utils/brandTheme';
+import { pageMeta, robotsTxt, sitemapXml, siteOrigin } from './utils/seo';
 
 const app = express();
 
@@ -50,6 +54,8 @@ app.use(helmet({
       workerSrc: ["'self'"],
       manifestSrc: ["'self'"],
       objectSrc: ["'none'"],
+      // Embedded maps showing where an item, service or room is.
+      frameSrc: ['https://maps.google.com', 'https://www.google.com'],
       frameAncestors: ["'none'"],
       baseUri: ["'self'"],
       formAction: ["'self'"],
@@ -194,24 +200,79 @@ apiRouter.use('/admin', adminRoutes);
 apiRouter.use('/reports', reportsRoutes);
 apiRouter.use('/verifications', verificationsRoutes);
 apiRouter.use('/events', eventsRoutes);
+apiRouter.use('/orders', ordersRoutes);
 apiRouter.use(paymentRoutes);
 
 app.use('/api/v1', apiRouter);
+
+// Colours chosen in Admin > Appearance, as CSS variables every page loads
+// before it paints. ?primary=&accent= previews unsaved colours (admin only UI).
+app.get('/brand.css', async (req, res, next) => {
+  try {
+    const b = await getBrand();
+    const pick = (q: unknown, fallback: string) => (typeof q === 'string' && isHexColor(q) ? q : fallback);
+    const preview = 'primary' in req.query || 'accent' in req.query;
+    res.type('text/css');
+    res.setHeader('Cache-Control', preview ? 'no-store' : 'no-cache');
+    res.send(brandCss(pick(req.query.primary, b.primaryColor), pick(req.query.accent, b.accentColor)));
+  } catch (error) {
+    next(error);
+  }
+});
+app.get('/robots.txt', (req, res) => {
+  res.type('text/plain').send(robotsTxt(siteOrigin(req)));
+});
+app.get('/sitemap.xml', async (req, res, next) => {
+  try {
+    res.type('application/xml').setHeader('Cache-Control', 'public, max-age=3600');
+    res.send(await sitemapXml(siteOrigin(req)));
+  } catch (error) {
+    next(error);
+  }
+});
 
 // In production the same server also serves the built website, so the site,
 // its API and uploaded photos all share one address.
 if (config.nodeEnv === 'production') {
   const web = path.resolve(__dirname, '../../frontend/dist');
+  const template = fs.readFileSync(path.join(web, 'index.html'), 'utf8');
+  const builtManifest = (() => {
+    try {
+      return JSON.parse(fs.readFileSync(path.join(web, 'manifest.webmanifest'), 'utf8'));
+    } catch {
+      return {};
+    }
+  })();
+
+  // The installable-app manifest uses the platform's own name and colours.
+  app.get('/manifest.webmanifest', async (_req, res, next) => {
+    try {
+      const b = await getBrand();
+      res.type('application/manifest+json').setHeader('Cache-Control', 'no-cache');
+      res.send(JSON.stringify({ ...builtManifest, name: b.appName, short_name: b.universityShort || b.appName, description: b.seoDescription, theme_color: b.primaryColor }));
+    } catch (error) {
+      next(error);
+    }
+  });
+
   app.use(express.static(web, { index: false, setHeaders: (res, file) => {
     // Build files carry a version hash in their name, so they can be cached
     // for a year. Everything else (page, photos, service worker) is checked
     // for updates on each visit, so replacing a photo shows up immediately.
     res.setHeader('Cache-Control', /[\\/]assets[\\/]/.test(file) ? 'public, max-age=31536000, immutable' : 'no-cache');
   } }));
-  app.use((req, res, next) => {
+
+  // Every page gets its own title, description, preview image and structured
+  // data, so search engines and shared links show the right thing.
+  app.use(async (req, res, next) => {
     if (req.method !== 'GET' || req.path.startsWith('/api') || req.path.startsWith('/uploads')) return next();
     res.setHeader('Cache-Control', 'no-cache');
-    res.sendFile(path.join(web, 'index.html'));
+    try {
+      const { head } = await pageMeta(req);
+      res.type('html').send(template.replace(/<!--seo-->[\s\S]*?<!--\/seo-->/, head));
+    } catch {
+      res.type('html').send(template);
+    }
   });
 }
 

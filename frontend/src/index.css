@@ -52,10 +52,12 @@
   --animate-fade-in: fade-in 180ms var(--ease-out-soft);
   --animate-pop-in: pop-in 200ms var(--ease-out-soft);
   --animate-shimmer: shimmer 1.6s linear infinite;
-  --animate-page-in: page-in 380ms var(--ease-out-soft) both;
-  --animate-fade-up: fade-up 600ms var(--ease-out-soft) both;
-  --animate-slide-in-left: slide-in-left 260ms var(--ease-out-soft) both;
-  --animate-ken-burns: ken-burns 18s ease-out both;
+  /* "backwards", not "both": a held transform would make the element the
+     containing block for position:fixed children (e.g. the mobile order bar). */
+  --animate-page-in: page-in 380ms var(--ease-out-soft) backwards;
+  --animate-fade-up: fade-up 600ms var(--ease-out-soft) backwards;
+  --animate-slide-in-left: slide-in-left 260ms var(--ease-out-soft) backwards;
+  --animate-ken-burns: ken-burns 18s ease-out backwards;
   --animate-float: float 4s ease-in-out infinite;
   --animate-wiggle: wiggle 2.8s ease-in-out infinite;
   --animate-progress: progress linear both;
@@ -246,8 +248,13 @@ html.theme-transition *::after {
 
 /* A freshly posted item pops in with a gold glow that fades out. */
 @keyframes just-posted {
-  0% { opacity: 0; transform: translateY(-14px) scale(0.96); box-shadow: 0 0 0 0 rgb(255 200 31 / 0); }
-  35% { opacity: 1; transform: none; box-shadow: 0 0 0 4px rgb(255 200 31 / 0.85); }
-  100% { box-shadow: 0 0 0 2px rgb(255 200 31 / 0.55); }
+  0% { opacity: 0; transform: translateY(-14px) scale(0.96); box-shadow: 0 0 0 0 transparent; }
+  35% { opacity: 1; transform: none; box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-accent-400) 85%, transparent); }
+  100% { box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent-400) 55%, transparent); }
 }
 .just-posted { animation: just-posted 900ms var(--ease-out-soft) both; }
+
+/* The mobile bottom navigation is hidden from tablet width up. */
+@media (min-width: 768px) {
+  :root { --bottom-nav: 0px !important; }
+}

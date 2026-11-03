@@ -14,6 +14,7 @@ import { Button } from '../../components/ui/button';
 import { Field, Input } from '../../components/ui/input';
 import { useSignOut } from '../../components/layout/navbar';
 import { safeRedirect } from './Login';
+import { useBrand } from '../../lib/settings';
 
 const schema = z
   .object({
@@ -37,6 +38,7 @@ export default function SetPasswordPage() {
   const redirect = safeRedirect(params.get('redirect'));
   const { user, isAuthenticated, setUser } = useAuthStore();
   const signOut = useSignOut();
+  const brand = useBrand();
   const [show, setShow] = useState(false);
 
   const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<Form>({ resolver: zodResolver(schema) });
@@ -54,7 +56,7 @@ export default function SetPasswordPage() {
     try {
       await authApi.changePassword(data.currentPassword, data.newPassword);
       setUser({ ...user!, mustChangePassword: false });
-      toast.success('Password saved. Welcome to Cavendish Connect!');
+      toast.success(`Password saved. Welcome to ${brand.appName}!`);
       navigate(redirect, { replace: true });
     } catch (err) {
       toast.error(getErrorMessage(err, 'Could not save your password'));

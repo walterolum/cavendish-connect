@@ -1,5 +1,6 @@
 import {
   LuActivity,
+  LuCalendarCheck,
   LuBell,
   LuCircleHelp,
   LuCirclePlus,
@@ -24,6 +25,7 @@ const config: HubConfig = {
     { to: '/services/browse', label: 'Find Services', icon: LuSearch },
     { to: '/services/create', label: 'Post a Service', icon: LuCirclePlus },
     { to: '/dashboard?tab=services', label: 'My Activity', icon: LuActivity },
+    { to: '/orders', label: 'Bookings', icon: LuCalendarCheck, badge: 'orders' },
     { to: '/messages', label: 'Messages', icon: LuMessageSquare, badge: 'messages' },
     { to: '/notifications', label: 'Notifications', icon: LuBell, badge: 'notifications' },
     { to: '/favorites', label: 'Favorites', icon: LuHeart },
@@ -45,7 +47,7 @@ const config: HubConfig = {
         <img src="/images/services-students.jpg" alt="" className="h-full w-full object-cover" loading="lazy" />
         <div className="absolute inset-0 bg-gradient-to-b from-brand-700 via-transparent to-transparent" />
         <svg viewBox="0 0 200 30" preserveAspectRatio="none" className="absolute inset-x-0 bottom-0 h-6 w-full" aria-hidden="true">
-          <path d="M0 30 C60 4 140 4 200 18 V30 Z" fill="#ffc81f" />
+          <path d="M0 30 C60 4 140 4 200 18 V30 Z" style={{ fill: 'var(--color-accent-400)' }} />
         </svg>
       </div>
     </div>

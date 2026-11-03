@@ -6,7 +6,9 @@ import { useAuthStore } from '../store/auth';
 import { messagesApi } from '../services/engagement.service';
 import { notificationsApi } from '../services/notifications.service';
 import { favoritesApi, FavoriteType } from '../services/favorites.service';
+import { ordersApi } from '../services/orders.service';
 import { getErrorMessage } from './api';
+import { useBrand } from './settings';
 
 /** Path to the sign-in page that returns the user to where they were. */
 export function loginPath(from: string) {
@@ -111,7 +113,8 @@ export function useUnreadCounts() {
 
 /** Sets the browser tab title for the current page. */
 export function useDocumentTitle(title?: string) {
-  const full = title ? `${title} · CAV CONNECT` : 'CAV CONNECT · Connect. Buy. Sell. Serve. Find.';
+  const brand = useBrand();
+  const full = title ? `${title} · ${brand.appName}` : `${brand.appName} · ${brand.tagline}`;
   if (typeof document !== 'undefined' && document.title !== full) document.title = full;
 }
 
@@ -147,4 +150,18 @@ export function useNewArrivals(ids: (number | undefined)[] | undefined) {
   }, [key]);
 
   return fresh;
+}
+
+/** Pending requests waiting for me (as seller) and my own open orders. */
+export function useOrderCounts() {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const q = useQuery({
+    queryKey: ['orders', 'counts'],
+    queryFn: ordersApi.counts,
+    enabled: isAuthenticated,
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
+    staleTime: 10_000,
+  });
+  return { incoming: isAuthenticated ? q.data?.incomingPending ?? 0 : 0, mine: isAuthenticated ? q.data?.myOpen ?? 0 : 0 };
 }

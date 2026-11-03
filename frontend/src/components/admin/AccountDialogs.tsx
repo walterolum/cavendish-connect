@@ -10,6 +10,7 @@ import { ROLE_LABELS, label } from '../../lib/labels';
 import { Modal } from '../ui/modal';
 import { Button } from '../ui/button';
 import { Field, Input, Select } from '../ui/input';
+import { useBrand } from '../../lib/settings';
 
 export const ACCOUNT_ROLES = ['STUDENT', 'SERVICE_PROVIDER', 'LANDLORD', 'VENDOR', 'ADMIN'] as const;
 
@@ -138,10 +139,11 @@ export function TempPasswordDialog({
   onClose: () => void;
 }) {
   const [copied, setCopied] = useState(false);
+  const brand = useBrand();
   useEffect(() => setCopied(false), [data]);
 
   const text = data
-    ? `Cavendish Connect sign-in\n${data.email ? `Email: ${data.email}\n` : ''}Temporary password: ${data.tempPassword}\nYou'll choose your own password when you first sign in.`
+    ? `${brand.appName} sign-in\n${data.email ? `Email: ${data.email}\n` : ''}Temporary password: ${data.tempPassword}\nYou'll choose your own password when you first sign in.`
     : '';
 
   const copy = async () => {

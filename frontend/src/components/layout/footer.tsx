@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { FiMail, FiPhone, FiShield } from 'react-icons/fi';
-import { usePublicSettings } from '../../lib/settings';
+import { useBrand, usePublicSettings } from '../../lib/settings';
 import { Logo } from './logo';
 
 const columns = [
@@ -35,7 +35,8 @@ const columns = [
 
 export function Footer() {
   const { data: settings } = usePublicSettings();
-  const name = settings?.platformName || 'CAV CONNECT';
+  const brand = useBrand();
+  const name = brand.appName;
   return (
     <footer className="mt-16 border-t border-gray-200 bg-white pb-20 md:pb-0">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
@@ -43,7 +44,7 @@ export function Footer() {
           <div className="col-span-2">
             <Logo />
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-gray-600">
-              The trusted marketplace and community platform for the Cavendish University Uganda community.
+              The trusted marketplace and community platform for the {brand.universityName} community.
             </p>
             <div className="mt-5 flex max-w-xs items-start gap-2.5 rounded-xl bg-emerald-50 p-3 text-xs leading-relaxed text-emerald-800">
               <FiShield className="mt-0.5 h-4 w-4 shrink-0" />

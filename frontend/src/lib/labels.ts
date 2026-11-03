@@ -24,6 +24,10 @@ const STATUS: Record<string, StatusMeta> = {
   // Verifications
   PENDING: { label: 'Pending', variant: 'amber' },
   VERIFIED: { label: 'Verified', variant: 'green' },
+  // Orders
+  ACCEPTED: { label: 'Accepted', variant: 'brand', hint: 'Arrange payment and pick-up together' },
+  COMPLETED: { label: 'Completed', variant: 'green' },
+  DECLINED: { label: 'Declined', variant: 'red' },
   // Payments
   SUCCESSFUL: { label: 'Paid', variant: 'green' },
   FAILED: { label: 'Failed', variant: 'red' },

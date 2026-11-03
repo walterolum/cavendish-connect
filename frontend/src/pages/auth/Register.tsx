@@ -1,6 +1,6 @@
 import { FiCheckCircle, FiMail, FiPhone, FiShield, FiUserCheck } from 'react-icons/fi';
 import { useDocumentTitle } from '../../lib/hooks';
-import { usePublicSettings } from '../../lib/settings';
+import { useBrand, usePublicSettings } from '../../lib/settings';
 import { ButtonLink } from '../../components/ui/button';
 
 /**
@@ -10,10 +10,11 @@ import { ButtonLink } from '../../components/ui/button';
 export default function Register() {
   useDocumentTitle('Get an account');
   const { data: settings } = usePublicSettings();
+  const brand = useBrand();
 
   const steps = [
     { icon: FiUserCheck, title: 'Visit or contact the admin office', text: 'Bring your student or staff ID, or the details of the business or hostel you represent.' },
-    { icon: FiShield, title: 'We create your account', text: 'Every member is checked first, so everyone you meet on Cavendish Connect is real.' },
+    { icon: FiShield, title: 'We create your account', text: `Every member is checked first, so everyone you meet on ${brand.appName} is real.` },
     { icon: FiCheckCircle, title: 'Sign in and set your password', text: "You'll get a temporary password. The first time you sign in, you choose your own." },
   ];
 
@@ -25,7 +26,7 @@ export default function Register() {
         </span>
         <h1 className="mt-4 text-[28px] font-bold text-gray-900">Accounts are issued by the admin office</h1>
         <p className="mt-2 text-[15px] text-gray-500">
-          To keep the campus community safe, you can't sign yourself up. The Cavendish Connect administrator creates
+          To keep the campus community safe, you can't sign yourself up. The {brand.appName} administrator creates
           accounts for students, staff, landlords and vendors.
         </p>
       </div>
@@ -51,7 +52,7 @@ export default function Register() {
         {(settings?.contactEmail || settings?.contactPhone) && (
           <div className="mt-6 grid gap-2 rounded-2xl bg-gray-50 p-4 text-sm sm:grid-cols-2">
             {settings.contactEmail && (
-              <a href={`mailto:${settings.contactEmail}?subject=Cavendish%20Connect%20account%20request`} className="flex items-center gap-2 font-medium text-brand-700 hover:text-brand-800">
+              <a href={`mailto:${settings.contactEmail}?subject=${encodeURIComponent(`${brand.appName} account request`)}`} className="flex items-center gap-2 font-medium text-brand-700 hover:text-brand-800">
                 <FiMail className="h-4 w-4 shrink-0" /> {settings.contactEmail}
               </a>
             )}

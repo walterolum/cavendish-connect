@@ -119,6 +119,8 @@ export class AccommodationService {
             avatar: true,
             verificationRequests: { where: { status: 'VERIFIED' }, select: { type: true } },
             bio: true,
+            phone: true,
+            email: true,
             location: true,
             createdAt: true,
             _count: {
@@ -176,6 +178,8 @@ export class AccommodationService {
 
     return {
       ...property,
+      // Phone and email are for signed-in members only.
+      user: viewer ? property.user : { ...property.user, phone: null, email: null },
       isFavorited,
       viewCount: property.viewCount + (countView ? 1 : 0),
       reviewsCount: reviews._count,

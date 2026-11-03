@@ -1,7 +1,7 @@
 import { Component, ErrorInfo, ReactNode, Suspense } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { FiShield, FiTool } from 'react-icons/fi';
-import { usePublicSettings } from '../../lib/settings';
+import { useBrand, usePublicSettings } from '../../lib/settings';
 import { useAuthStore, isAdmin } from '../../store/auth';
 import { loginPath } from '../../lib/hooks';
 import { ErrorState, EmptyState, PageLoader } from '../ui/loading';
@@ -147,6 +147,7 @@ export function RequireAuth({ children }: { children?: ReactNode }) {
 
 export function RequireAdmin({ children }: { children?: ReactNode }) {
   const { user, isAuthenticated } = useAuthStore();
+  const brandName = useBrand().appName;
   const location = useLocation();
   if (!isAuthenticated) return <Navigate to={loginPath(location.pathname)} replace />;
   if (!isAdmin(user)) {
@@ -158,7 +159,7 @@ export function RequireAdmin({ children }: { children?: ReactNode }) {
           message="Your account doesn't have access to the admin console. Contact an administrator if you think this is a mistake."
         >
           <ButtonLink to="/" variant="outline">
-            Back to CAV CONNECT
+            Back to {brandName}
           </ButtonLink>
         </EmptyState>
       </div>

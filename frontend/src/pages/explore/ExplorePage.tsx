@@ -15,6 +15,7 @@ import ListingCard from '../../components/listing/ListingCard';
 import ServiceCard from '../../components/listing/ServiceCard';
 import PropertyCard from '../../components/listing/PropertyCard';
 import { useUrlFilters } from '../../components/browse/Browse';
+import { useBrand } from '../../lib/settings';
 
 type Group<T> = { items: T[]; total: number };
 interface SearchResult {
@@ -28,6 +29,7 @@ const SUGGESTIONS = ['Laptop', 'Textbooks', 'Tutoring', 'Hostel', 'Phone repair'
 const LIMIT = 12;
 
 export default function ExplorePage() {
+  const brand = useBrand();
   const f = useUrlFilters();
   const q = f.get('q');
   const tab = (f.get('type') || 'all') as Tab;
@@ -86,7 +88,7 @@ export default function ExplorePage() {
   return (
     <Page>
       <div className="mx-auto max-w-2xl text-center">
-        <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">Search CAV CONNECT</h1>
+        <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">Search {brand.appName}</h1>
         <p className="mt-2 text-gray-500">Items, services and accommodation — all in one place.</p>
         <form onSubmit={submit} className="mt-6 flex gap-2" role="search">
           <div className="flex-1">

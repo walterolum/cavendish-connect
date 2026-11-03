@@ -11,6 +11,7 @@ import { getErrorMessage } from '../../lib/api';
 import { useDocumentTitle } from '../../lib/hooks';
 import { Button } from '../../components/ui/button';
 import { Field, Input } from '../../components/ui/input';
+import { useBrand } from '../../lib/settings';
 
 const schema = z.object({
   email: z.string().trim().email('Enter a valid email address'),
@@ -25,6 +26,7 @@ export function safeRedirect(value: string | null) {
 
 export default function Login() {
   useDocumentTitle('Sign in');
+  const brand = useBrand();
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const redirect = safeRedirect(params.get('redirect'));
@@ -55,7 +57,7 @@ export default function Login() {
     <div className="w-full max-w-[420px] animate-pop-in">
       <div className="mb-8 text-center">
         <h1 className="text-[28px] font-bold text-gray-900">Welcome back</h1>
-        <p className="mt-2 text-[15px] text-gray-500">Sign in to the Cavendish University campus platform.</p>
+        <p className="mt-2 text-[15px] text-gray-500">Sign in to the {brand.universityName} campus platform.</p>
       </div>
 
       <div className="rounded-3xl border border-gray-200/80 bg-white p-6 shadow-raised sm:p-8">

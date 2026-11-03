@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -19,7 +20,9 @@ import { accommodationApi } from '../../services/listing.service';
 import { getErrorMessage, isNotFound } from '../../lib/api';
 import { formatMoney, formatRelativeTime, cn } from '../../lib/utils';
 import { PROPERTY_TYPE_LABELS, label } from '../../lib/labels';
-import { useDocumentTitle, useFavoriteToggle } from '../../lib/hooks';
+import { useAuthGate, useDocumentTitle, useFavoriteToggle } from '../../lib/hooks';
+import { OrderDialog } from '../../components/orders/OrderDialog';
+import { LocationMap } from '../../components/listing/LocationMap';
 import { useAuthStore } from '../../store/auth';
 import { Badge, StatusBadge } from '../../components/ui/badge';
 import { ButtonLink } from '../../components/ui/button';
@@ -55,6 +58,8 @@ export default function PropertyDetailPage() {
   const me = useAuthStore((s) => s.user);
   const key = ['accommodation', 'detail', slug];
   const report = useReportDialog();
+  const [ordering, setOrdering] = useState(false);
+  const gate = useAuthGate();
 
   const { data: property, isLoading, error, refetch } = useQuery({
     queryKey: key,
@@ -101,6 +106,7 @@ export default function PropertyDetailPage() {
         <div className="min-w-0">
           <ImageGallery images={property.images} title={property.title} fallbackIcon={FiHome} />
           <DescriptionBlock title="About this place">{property.description}</DescriptionBlock>
+          <LocationMap location={property.location} title="Location" />
 
           <section className="mt-8">
             <h2 className="text-lg font-semibold text-gray-900">What's included</h2>
@@ -158,6 +164,13 @@ export default function PropertyDetailPage() {
 
         <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
           <ActionPanel
+            priceText={`${formatMoney(property.monthlyPrice, property.currency)} / month`}
+            order={{
+              label: 'Request a viewing',
+              disabled: property.status !== 'ACTIVE' || property.availableRooms === 0,
+              note: property.availableRooms === 0 ? 'Fully booked right now' : undefined,
+              onClick: () => gate('Sign in to place an order') && setOrdering(true),
+            }}
             title={property.title}
             badges={
               <>
@@ -206,6 +219,26 @@ export default function PropertyDetailPage() {
           </CardGrid>
         </section>
       )}
+
+      <OrderDialog
+
+        open={ordering}
+
+        onClose={() => setOrdering(false)}
+
+        targetType="PROPERTY"
+
+        targetId={property.id}
+
+        title={property.title}
+
+        price={property.monthlyPrice}
+
+        currency={property.currency}
+
+        maxQuantity={property.availableRooms}
+
+      />
 
       <ReportModal open={report.open} onClose={report.close} targetType="ACCOMMODATION" targetId={property.id} targetLabel="Property" />
     </div>

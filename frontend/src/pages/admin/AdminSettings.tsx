@@ -53,10 +53,8 @@ const GROUPS: { key: string; label: string; description: string }[] = [
   { key: 'verification', label: 'Verification', description: 'Rules for verified members' },
 ];
 
-/** platform.name is not seeded, but the footer reads it, so always offer it. */
-const DEFAULTS: Omit<SystemSetting, 'id' | 'createdAt' | 'updatedAt'>[] = [
-  { key: 'platform.name', value: 'CAV CONNECT', group: 'general', type: 'string' },
-];
+/** Name, tagline, colours, logo and images are edited on the Appearance page. */
+const APPEARANCE_KEYS = new Set(['platform.name', 'platform.tagline']);
 
 function kindOf(s: Pick<SystemSetting, 'key' | 'type'>): Kind {
   return FIELDS[s.key]?.kind ?? (s.type === 'number' || s.type === 'boolean' ? s.type : 'string');
@@ -79,8 +77,10 @@ export default function AdminSettings() {
   const { data, isLoading, error, refetch } = useQuery({ queryKey: ['admin', 'settings'], queryFn: () => adminApi.getSettings() });
 
   const settings = useMemo(() => {
-    const rows = [...(data ?? [])] as Pick<SystemSetting, 'key' | 'value' | 'group' | 'type'>[];
-    for (const d of DEFAULTS) if (!rows.some((r) => r.key === d.key)) rows.push(d);
+    const rows = (data ?? []).filter((r) => r.group !== 'branding' && !APPEARANCE_KEYS.has(r.key)) as Pick<
+      SystemSetting,
+      'key' | 'value' | 'group' | 'type'
+    >[];
     return rows;
   }, [data]);
 

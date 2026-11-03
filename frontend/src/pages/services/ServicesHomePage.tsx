@@ -44,6 +44,7 @@ import ProviderCard from '../../components/services/ProviderCard';
 import { HubHero, HubSlide } from '../../components/hub/HubHero';
 import { CardGridSkeleton, EmptyState, ErrorState, Skeleton } from '../../components/ui/loading';
 import type { Category } from '../../types';
+import { Brand, useBrand } from '../../lib/settings';
 
 /** Icon + colour per service category, picked from its name so new categories still look right. */
 const LOOK: [RegExp, IconType, string][] = [
@@ -70,12 +71,12 @@ const LOOK: [RegExp, IconType, string][] = [
 ];
 const lookFor = (c: Category) => LOOK.find(([re]) => re.test(c.name)) ?? [/./, LuBriefcase, 'text-brand-700 bg-brand-50'];
 
-const SLIDES: HubSlide[] = [
+const slidesFor = (b: Brand): HubSlide[] => [
   {
     title: 'Campus',
     highlight: 'Services Hub',
-    text: 'Find and offer services easily within our Cavendish University community.',
-    image: '/images/campus-hero.jpg',
+    text: `Find and offer services easily within our ${b.universityName} community.`,
+    image: b.heroServices,
     position: 'center 40%',
     checks: ['Trusted Students', 'Affordable Prices', 'Quality Services'],
     primary: { to: '/services/browse', label: 'Explore Services' },
@@ -91,7 +92,7 @@ const SLIDES: HubSlide[] = [
   {
     title: 'Hire with',
     highlight: 'Confidence',
-    text: 'Every provider is a verified member of the Cavendish community, with real reviews from students.',
+    text: `Every provider is a verified member of the ${b.universityShort} community, with real reviews from students.`,
     image: '/images/campus-hero-2.jpg',
     checks: ['Verified members', 'Real reviews', 'Message directly'],
     primary: { to: '/services/browse?sort=popular', label: 'See Top Providers' },
@@ -122,6 +123,8 @@ function EventDate({ iso }: { iso: string }) {
 
 export default function ServicesHomePage() {
   useDocumentTitle('Services Hub');
+  const brand = useBrand();
+  const SLIDES = slidesFor(brand);
 
   const categoriesQ = useQuery({ queryKey: ['service-categories'], queryFn: () => categoriesApi.getServiceCategories(), staleTime: 5 * 60_000 });
   const featuredQ = useQuery({
@@ -220,7 +223,7 @@ export default function ServicesHomePage() {
           <Panel className="p-5">
             <p className="text-lg font-bold text-gray-900">Why Use Our Platform?</p>
             <ul className="mt-4 space-y-4">
-              {['Connect with verified students', 'Get quality services at fair prices', 'Support fellow Cavendish students'].map((t) => (
+              {['Connect with verified students', 'Get quality services at fair prices', `Support fellow ${brand.universityShort} students`].map((t) => (
                 <li key={t} className="flex items-start gap-3 text-sm text-gray-700">
                   <LuCircleCheck className="h-6 w-6 shrink-0 fill-emerald-500 text-white dark:text-gray-50" /> {t}
                 </li>
@@ -239,7 +242,7 @@ export default function ServicesHomePage() {
               Create Ad <LuArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Link>
             <svg viewBox="0 0 200 20" preserveAspectRatio="none" className="absolute inset-x-0 bottom-0 h-3 w-full" aria-hidden="true">
-              <path d="M0 20 C60 2 140 2 200 12 V20 Z" fill="#ffc81f" />
+              <path d="M0 20 C60 2 140 2 200 12 V20 Z" style={{ fill: 'var(--color-accent-400)' }} />
             </svg>
           </div>
 

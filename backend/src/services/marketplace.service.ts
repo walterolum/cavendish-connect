@@ -88,6 +88,8 @@ export class MarketplaceService {
             avatar: true,
             verificationRequests: { where: { status: 'VERIFIED' }, select: { type: true } },
             bio: true,
+            phone: true,
+            email: true,
             location: true,
             createdAt: true,
             _count: {
@@ -127,7 +129,9 @@ export class MarketplaceService {
       isFavorited = !!fav;
     }
 
-    return { ...listing, isFavorited, viewCount: listing.viewCount + (countView ? 1 : 0) };
+    // Phone and email are for signed-in members only.
+    const user = viewer ? listing.user : { ...listing.user, phone: null, email: null };
+    return { ...listing, user, isFavorited, viewCount: listing.viewCount + (countView ? 1 : 0) };
   }
 
   async getListings(query: ListQuery) {

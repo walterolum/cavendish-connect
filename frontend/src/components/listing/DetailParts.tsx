@@ -1,6 +1,6 @@
 import { ComponentType, ReactNode, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { FiChevronLeft, FiChevronRight, FiEdit2, FiFlag, FiHeart, FiMessageSquare, FiShare2 } from 'react-icons/fi';
+import { Link, useLocation } from 'react-router-dom';
+import { FiChevronLeft, FiChevronRight, FiEdit2, FiFlag, FiHeart, FiLock, FiMail, FiMessageSquare, FiPhone, FiShare2, FiShoppingBag } from 'react-icons/fi';
 import { toast } from 'sonner';
 import { VerifiedBadge } from '../ui/badge';
 import { ListingImage, ListingOwner, isVerifiedOwner } from '../../types';
@@ -13,6 +13,7 @@ import { Button, ButtonLink } from '../ui/button';
 import { Card } from '../ui/card';
 import { Skeleton } from '../ui/loading';
 import { Stars } from '../ui/stat';
+import { useBrand } from '../../lib/settings';
 
 /** Primary image first, then the rest in their saved order. */
 export function orderImages(images?: ListingImage[]) {
@@ -143,6 +144,8 @@ export function ActionPanel({
   favoritePending,
   onReport,
   contactLabel = 'Message',
+  order,
+  priceText,
 }: {
   title: string;
   price: ReactNode;
@@ -154,6 +157,10 @@ export function ActionPanel({
   favoritePending?: boolean;
   onReport: () => void;
   contactLabel?: string;
+  /** Main call to action: order / book / request a viewing. */
+  order?: { label: string; onClick: () => void; disabled?: boolean; note?: string };
+  /** Short price for the pinned mobile bar, e.g. "UGX 300". */
+  priceText?: string;
 }) {
   const me = useAuthStore((s) => s.user);
   const isOwner = !!owner && me?.id === owner.id;
@@ -181,7 +188,16 @@ export function ActionPanel({
 
       {!isOwner && (
         <div className="mt-6 space-y-2">
-          <Button size="lg" className="w-full" onClick={() => start(owner?.id)} loading={isPending} disabled={!owner}>
+          {order && (
+            <>
+              <Button size="lg" className="w-full" onClick={order.onClick} disabled={order.disabled}>
+                <FiShoppingBag className="h-4 w-4" />
+                {order.label}
+              </Button>
+              {order.note && <p className="text-center text-xs text-gray-500">{order.note}</p>}
+            </>
+          )}
+          <Button size="lg" variant={order ? 'outline' : 'primary'} className="w-full" onClick={() => start(owner?.id)} loading={isPending} disabled={!owner}>
             <FiMessageSquare className="h-4 w-4" />
             {contactLabel}
           </Button>
@@ -202,6 +218,30 @@ export function ActionPanel({
           <FiShare2 className="h-4 w-4" />
           Share link
         </Button>
+      )}
+
+      {/* Phones and tablets: price and the main action stay pinned to the bottom of the screen. */}
+      {!isOwner && (
+        <>
+          <div aria-hidden="true" className="h-16 lg:hidden" />
+          <div className="pb-safe fixed inset-x-0 z-30 border-t border-gray-200/80 bg-white/95 px-4 py-3 shadow-[0_-8px_24px_-12px_rgb(0_0_0/0.25)] backdrop-blur-xl lg:hidden" style={{ bottom: 'var(--bottom-nav, 0px)' }}>
+            <div className="mx-auto flex max-w-2xl items-center gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs text-gray-500">{title}</p>
+                {priceText && <p className="truncate font-bold text-gray-900 tabular-nums">{priceText}</p>}
+              </div>
+              <Button variant="outline" size="icon" onClick={() => start(owner?.id)} disabled={!owner || isPending} aria-label={contactLabel}>
+                <FiMessageSquare className="h-5 w-5" />
+              </Button>
+              {order && (
+                <Button onClick={order.onClick} disabled={order.disabled} className="shrink-0">
+                  <FiShoppingBag className="h-4 w-4" />
+                  {order.label}
+                </Button>
+              )}
+            </div>
+          </div>
+        </>
       )}
 
       {!isOwner && (
@@ -227,6 +267,54 @@ export function Fact({ icon: Icon, children }: { icon: ComponentType<{ className
   );
 }
 
+/** Call / WhatsApp / email for signed-in members; a sign-in prompt otherwise. */
+function ContactButtons({ owner }: { owner: ListingOwner }) {
+  const { user, isAuthenticated } = useAuthStore();
+  const location = useLocation();
+  if (user?.id === owner.id) return null;
+  if (!isAuthenticated) {
+    return (
+      <Link
+        to={`/login?redirect=${encodeURIComponent(location.pathname)}`}
+        className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-gray-50 px-3 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100"
+      >
+        <FiLock className="h-4 w-4" /> Sign in to see contact details
+      </Link>
+    );
+  }
+  const phone = owner.phone?.trim();
+  const tel = phone?.replace(/[^\d+]/g, '');
+  // wa.me needs the international format, so only offer WhatsApp for +country numbers.
+  const whatsapp = tel?.startsWith('+') ? `https://wa.me/${tel.slice(1)}` : null;
+  if (!phone && !owner.email) {
+    return <p className="mt-4 rounded-xl bg-gray-50 px-3 py-2.5 text-center text-xs text-gray-500">No contact details shared. Use Message to get in touch.</p>;
+  }
+  const btn = 'flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition hover:border-brand-300 hover:bg-brand-50 hover:text-brand-800';
+  return (
+    <div className="mt-4 space-y-2">
+      {phone && <p className="text-sm font-semibold text-gray-900 tabular-nums">{phone}</p>}
+      <div className="flex flex-wrap gap-2">
+        {tel && (
+          <a href={`tel:${tel}`} className={btn}>
+            <FiPhone className="h-4 w-4" /> Call
+          </a>
+        )}
+        {whatsapp && (
+          <a href={whatsapp} target="_blank" rel="noreferrer noopener" className={btn}>
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.5-4-4.7-4.2-.1-.2-1.1-1.5-1.1-2.8s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.4.6-.4.4c-.1.2-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.4 2.4 1.5.3.1.5.1.6-.1l.9-1c.2-.3.4-.2.6-.1l2 .9c.3.1.5.2.5.3.1.2.1.7-.1 1.4Z" /></svg>
+            WhatsApp
+          </a>
+        )}
+        {owner.email && (
+          <a href={`mailto:${owner.email}`} className={btn}>
+            <FiMail className="h-4 w-4" /> Email
+          </a>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function OwnerCard({
   owner,
   role,
@@ -238,6 +326,7 @@ export function OwnerCard({
   rating?: number | null;
   reviewCount?: number;
 }) {
+  const brandName = useBrand().appName;
   if (!owner) return null;
   return (
     <Card className="p-5">
@@ -249,7 +338,7 @@ export function OwnerCard({
             <span className="truncate">{fullName(owner)}</span>
             {isVerifiedOwner(owner) && <VerifiedBadge className="shrink-0" />}
           </p>
-          {isVerifiedOwner(owner) && <p className="text-xs font-medium text-brand-700">Verified by CAV CONNECT</p>}
+          {isVerifiedOwner(owner) && <p className="text-xs font-medium text-brand-700">Verified by {brandName}</p>}
           <p className="truncate text-sm text-gray-500">@{owner.username}</p>
           {reviewCount ? (
             <p className="mt-1 flex items-center gap-1.5 text-xs text-gray-600">
@@ -271,18 +360,20 @@ export function OwnerCard({
         </p>
       )}
       {owner.bio && <p className="mt-3 line-clamp-3 text-sm text-gray-600">{owner.bio}</p>}
+      <ContactButtons owner={owner} />
     </Card>
   );
 }
 
 export function SafetyTips() {
+  const brandName = useBrand().appName;
   return (
     <div className="rounded-2xl border border-gray-200/80 bg-white p-5 text-sm shadow-card">
       <p className="font-semibold text-gray-900">Stay safe</p>
       <ul className="mt-2 space-y-1.5 text-gray-600">
         <li>• Meet in a public place on campus.</li>
         <li>• Inspect before you pay. Never pay in advance to strangers.</li>
-        <li>• Keep conversations on CAV CONNECT.</li>
+        <li>• Keep conversations on {brandName}.</li>
       </ul>
     </div>
   );

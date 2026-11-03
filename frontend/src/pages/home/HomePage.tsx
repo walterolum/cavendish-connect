@@ -22,6 +22,7 @@ import PropertyCard from '../../components/listing/PropertyCard';
 import { Button, ButtonLink } from '../../components/ui/button';
 import { CardGrid, SectionHeader } from '../../components/ui/page';
 import { CardGridSkeleton, EmptyState } from '../../components/ui/loading';
+import { useBrand } from '../../lib/settings';
 
 function Row<T>({
   title,
@@ -65,6 +66,7 @@ function Row<T>({
 }
 
 export default function HomePage() {
+  const brand = useBrand();
   useDocumentTitle();
   const navigate = useNavigate();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -106,7 +108,7 @@ export default function HomePage() {
           <div className="mx-auto max-w-3xl text-center">
             <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-medium text-brand-100 backdrop-blur">
               <span className="h-1.5 w-1.5 rounded-full bg-accent-400" />
-              The Cavendish University community marketplace
+              The {brand.universityName} community marketplace
             </span>
             <h1 className="mt-6 text-4xl font-extrabold leading-[1.08] text-white sm:text-5xl lg:text-6xl">
               Buy, sell and find what you need —{' '}
@@ -122,7 +124,7 @@ export default function HomePage() {
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="Try “laptop”, “tutor” or “hostel”"
-                aria-label="Search CAV CONNECT"
+                aria-label={`Search ${brand.appName}`}
                 className="h-11 min-w-0 flex-1 bg-transparent text-[15px] text-gray-900 placeholder:text-gray-400 focus:outline-none"
               />
               <Button type="submit" size="md">

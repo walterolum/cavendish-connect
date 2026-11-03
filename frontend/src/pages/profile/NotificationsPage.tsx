@@ -11,8 +11,7 @@ import {
   FiShield,
   FiStar,
   FiTrendingUp,
-  FiXCircle,
-} from 'react-icons/fi';
+  FiXCircle, FiShoppingBag } from 'react-icons/fi';
 import { getErrorMessage } from '../../lib/api';
 import { AppNotification, notificationsApi } from '../../services/notifications.service';
 import { formatRelativeTime, cn } from '../../lib/utils';
@@ -32,12 +31,17 @@ const TYPE_META: Record<string, { icon: ComponentType<{ className?: string }>; t
   VERIFICATION_STATUS: { icon: FiShield, tone: 'bg-brand-50 text-brand-700' },
   PROMOTION_ACTIVE: { icon: FiTrendingUp, tone: 'bg-accent-50 text-accent-600' },
   SYSTEM_ANNOUNCEMENT: { icon: FiAlertTriangle, tone: 'bg-amber-50 text-amber-700' },
+  ORDER_RECEIVED: { icon: FiShoppingBag, tone: 'bg-emerald-50 text-emerald-700' },
+  ORDER_UPDATE: { icon: FiShoppingBag, tone: 'bg-brand-50 text-brand-700' },
 };
 
 /** Where a notification should take the user, if anywhere. */
 function destination(n: AppNotification): string | null {
   if (n.targetType === 'CONVERSATION' && n.targetId) return `/messages/${n.targetId}`;
   if (n.type === 'VERIFICATION_STATUS') return '/profile';
+  if (n.type === 'ORDER_RECEIVED') return '/orders?role=seller';
+  if (n.type === 'ORDER_UPDATE') return '/orders';
+  if (n.targetType === 'REPORT') return null;
   if (n.type.startsWith('LISTING_') || n.targetType === 'MARKETPLACE') return '/dashboard';
   return null;
 }

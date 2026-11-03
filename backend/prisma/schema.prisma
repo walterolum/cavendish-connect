@@ -82,6 +82,8 @@ model User {
   payments             Payment[]
   auditLogs            AuditLog[]
   subscriptions        Subscription[]
+  ordersPlaced         Order[]            @relation("OrderBuyer")
+  ordersReceived       Order[]            @relation("OrderSeller")
 
   @@index([email])
   @@index([username])
@@ -606,6 +608,8 @@ enum NotificationType {
   PROMOTION_ACTIVE
   SYSTEM_ANNOUNCEMENT
   REPORT_UPDATE
+  ORDER_RECEIVED
+  ORDER_UPDATE
 }
 
 // ─── PAYMENTS ──────────────────────────────────────────────────
@@ -790,4 +794,52 @@ model CampusEvent {
   updatedAt   DateTime  @updatedAt
 
   @@index([isPublished, startsAt])
+}
+
+// ─── ORDERS ────────────────────────────────────────────────────
+// A customer's order for an item, booking request for a service, or viewing
+// request for a property. Payment happens between the two people directly.
+
+enum OrderTarget {
+  LISTING
+  SERVICE
+  PROPERTY
+}
+
+enum OrderStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  CANCELLED
+  COMPLETED
+}
+
+model Order {
+  id             Int         @id @default(autoincrement())
+  buyerId        Int
+  sellerId       Int
+  targetType     OrderTarget
+  targetId       Int
+  title          String
+  unitPrice      Decimal?    @db.Decimal(12, 2)
+  currency       String      @default("UGX")
+  quantity       Int         @default(1)
+  message        String?     @db.Text
+  contactPhone   String
+  meetingPlace   String?
+  preferredDate  DateTime?
+  status         OrderStatus @default(PENDING)
+  sellerNote     String?     @db.Text
+  conversationId Int?
+  respondedAt    DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  buyer          User        @relation("OrderBuyer", fields: [buyerId], references: [id], onDelete: Cascade)
+  seller         User        @relation("OrderSeller", fields: [sellerId], references: [id], onDelete: Cascade)
+
+  @@index([buyerId, status])
+  @@index([sellerId, status])
+  @@index([targetType, targetId])
 }

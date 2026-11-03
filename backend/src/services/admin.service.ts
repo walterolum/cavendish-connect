@@ -5,6 +5,7 @@ import { hashPassword } from '../utils/helpers';
 import { paginate } from '../utils/response';
 import { auditLog } from '../middleware/audit';
 import { clearSettingsCache } from '../utils/settings';
+import { isHexColor } from '../utils/brandTheme';
 
 export type ListingKind = 'marketplace' | 'service' | 'accommodation';
 
@@ -578,6 +579,18 @@ export class AdminService {
       }
       if (type === 'boolean' && value !== 'true' && value !== 'false') {
         throw new BadRequestError(`"${item.key}" must be on or off`);
+      }
+      if (type === 'color' && !isHexColor(value)) {
+        throw new BadRequestError(`"${item.key}" must be a colour like #1442a3`);
+      }
+      if (type === 'image' && value && !/^(https:\/\/|\/uploads\/|\/images\/)[^\s"'<>]{1,500}$/.test(value)) {
+        throw new BadRequestError(`"${item.key}" must be an uploaded image or an https:// link`);
+      }
+      if (type !== 'image' && type !== 'boolean' && !value) {
+        throw new BadRequestError(`"${item.key}" cannot be empty`);
+      }
+      if (value.length > (type === 'text' ? 320 : type === 'image' ? 500 : 120)) {
+        throw new BadRequestError(`"${item.key}" is too long`);
       }
       if (item.key === 'contact.email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
         throw new BadRequestError('Support email is not a valid email address');

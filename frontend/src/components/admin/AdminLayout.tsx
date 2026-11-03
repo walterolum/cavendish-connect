@@ -4,6 +4,7 @@ import {
   FiActivity,
   FiAlertTriangle,
   FiCalendar,
+  FiDroplet,
   FiArrowUpRight,
   FiCheckCircle,
   FiGrid,
@@ -34,6 +35,7 @@ export const ADMIN_NAV = [
     group: 'Platform',
     items: [
       { to: '/admin/users', label: 'Users', icon: FiUsers },
+      { to: '/admin/appearance', label: 'Appearance', icon: FiDroplet },
       { to: '/admin/events', label: 'Events', icon: FiCalendar },
       { to: '/admin/settings', label: 'Settings', icon: FiSettings },
       { to: '/admin/audit-logs', label: 'Audit log', icon: FiActivity },

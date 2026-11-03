@@ -13,7 +13,7 @@ import {
   LuUserCheck,
 } from 'react-icons/lu';
 import { useDocumentTitle } from '../../lib/hooks';
-import { usePublicSettings } from '../../lib/settings';
+import { Brand, useBrand, usePublicSettings } from '../../lib/settings';
 import { cn } from '../../lib/utils';
 
 const TOPICS = [
@@ -24,18 +24,18 @@ const TOPICS = [
   { icon: LuFlag, title: 'Reporting a problem', text: 'Flag scams, fake listings or harassment.', href: '#report' },
 ];
 
-const SAFETY = [
+const safetyFor = (b: Brand) => [
   'Meet in busy, public places on campus, such as the library entrance or main reception, during the day.',
   'Inspect the item or room before paying. Never pay a deposit for a room you have not seen.',
-  'Keep conversations in Cavendish Connect messages, so there is a record if something goes wrong.',
+  `Keep conversations in ${b.appName} messages, so there is a record if something goes wrong.`,
   'Be wary of prices that look too good, pressure to pay quickly, or requests to pay to a third party.',
   'Bring a friend when viewing accommodation and tell someone where you are going.',
 ];
 
-const FAQ = [
+const faqFor = (b: Brand) => [
   {
     q: 'How do I get an account?',
-    a: 'Visit or contact the Cavendish Connect admin office with your student or staff ID (or business or property details). An admin creates your account and gives you a temporary password. The first time you sign in, you choose your own.',
+    a: `Visit or contact the ${b.appName} admin office with your student or staff ID (or business or property details). An admin creates your account and gives you a temporary password. The first time you sign in, you choose your own.`,
     id: 'account',
   },
   {
@@ -51,7 +51,7 @@ const FAQ = [
     a: 'The admin team has confirmed that this member is who they say they are (for example a current student, a landlord or a registered business). You can request verification from your profile page.',
   },
   {
-    q: 'Is Cavendish Connect involved in payments?',
+    q: `Is ${b.appName} involved in payments?`,
     a: 'No. Buyers and sellers agree on payment directly. Always inspect first and avoid paying in advance to people you have not met.',
   },
   {
@@ -66,6 +66,9 @@ const FAQ = [
 
 export default function HelpPage() {
   useDocumentTitle('Help & Support');
+  const brand = useBrand();
+  const SAFETY = safetyFor(brand);
+  const FAQ = faqFor(brand);
   const { data: settings } = usePublicSettings();
   const [open, setOpen] = useState<number | null>(0);
 
