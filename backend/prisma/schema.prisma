@@ -472,11 +472,32 @@ model ConversationParticipant {
   @@index([userId])
 }
 
+enum MessageType {
+  TEXT
+  IMAGE
+  AUDIO
+  FILE
+  LOCATION
+  CALL
+}
+
 model Message {
   id             Int      @id @default(autoincrement())
   conversationId Int
   senderId       Int
   content        String   @db.Text
+  type           MessageType @default(TEXT)
+  // Photo, voice note or document
+  attachmentUrl  String?  @db.VarChar(600)
+  attachmentName String?
+  attachmentMime String?
+  attachmentSize Int?
+  // Voice note length, or call length
+  durationSec    Int?
+  // Shared location; liveUntil is set while a live location is being shared
+  latitude       Decimal? @db.Decimal(10, 7)
+  longitude      Decimal? @db.Decimal(10, 7)
+  liveUntil      DateTime?
   isRead         Boolean  @default(false)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt

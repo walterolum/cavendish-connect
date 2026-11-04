@@ -63,7 +63,8 @@ export function RouteContent() {
   return (
     <ErrorBoundary resetKey={location.pathname}>
       <Suspense fallback={<PageLoader />}>
-        <div key={location.pathname} className="animate-page-in">
+        {/* h-full lets full-height screens (chat) keep their layout inside the transition */}
+        <div key={location.pathname} className="animate-page-in h-full">
           <Outlet />
         </div>
       </Suspense>

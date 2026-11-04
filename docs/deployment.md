@@ -20,6 +20,22 @@ without visitors, and the next visit takes about a minute to wake it.
 5. Optional: to stop it sleeping, add a free monitor at https://uptimerobot.com
    that requests `https://<your-app>.onrender.com/api/health` every 5 minutes.
 
+### Voice and video calls on strict networks
+
+Calls connect the two browsers directly, which works on most Wi-Fi and mobile
+networks. Some carriers and campus firewalls block that; for those, add a
+TURN relay. Free option: create an account at https://www.metered.ca/stun-turn
+("Open Relay"), then add these on Render (Environment):
+
+| Variable | Value |
+|---|---|
+| `TURN_URL` | the `turn:` / `turns:` URLs they give you, comma-separated |
+| `TURN_USERNAME` | your TURN username |
+| `TURN_CREDENTIAL` | your TURN password |
+
+Live chat uses Server-Sent Events over normal HTTPS, so no extra service is
+needed. It assumes one server instance (true on Render's free plan).
+
 ## Paid alternative: Railway (always on)
 
 

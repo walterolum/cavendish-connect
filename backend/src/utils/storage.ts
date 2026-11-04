@@ -23,7 +23,9 @@ if (usesCloudinary) cloudinaryCredentials(); // fail at start-up, not on the fir
 
 const FOLDER = 'cavendish-connect';
 
-async function uploadToCloudinary(file: Express.Multer.File): Promise<string> {
+type ResourceType = 'image' | 'video' | 'raw';
+
+async function uploadToCloudinary(file: Express.Multer.File, resourceType: ResourceType = 'image'): Promise<string> {
   const { apiKey, apiSecret, cloudName } = cloudinaryCredentials();
   const timestamp = Math.floor(Date.now() / 1000).toString();
   // Signed upload: the signature covers every parameter except the file and key.
@@ -36,17 +38,27 @@ async function uploadToCloudinary(file: Express.Multer.File): Promise<string> {
   form.append('folder', FOLDER);
   form.append('signature', signature);
 
-  const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, { method: 'POST', body: form });
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`, { method: 'POST', body: form });
   const body = (await res.json().catch(() => ({}))) as { secure_url?: string; error?: { message?: string } };
   if (!res.ok || !body.secure_url) {
     throw new AppError(`Photo upload failed: ${body.error?.message ?? res.statusText}`, 502);
   }
-  // Serve a modern format at a sensible size: faster pages and less of the free allowance used.
-  return body.secure_url.replace('/image/upload/', '/image/upload/f_auto,q_auto,c_limit,w_1600/');
+  // Photos: serve a modern format at a sensible size (faster pages, less of the free allowance).
+  return resourceType === 'image' ? body.secure_url.replace('/image/upload/', '/image/upload/f_auto,q_auto,c_limit,w_1600/') : body.secure_url;
+}
+
+/**
+ * Stores a chat attachment. Cloudinary keeps audio under "video" and PDFs as
+ * "raw" files (new accounts block PDF delivery from the image type).
+ */
+export async function storeChatFile(file: Express.Multer.File) {
+  const kind: ResourceType = file.mimetype.startsWith('image/') ? 'image' : file.mimetype.startsWith('audio/') ? 'video' : 'raw';
+  const url = usesCloudinary ? await uploadToCloudinary(file, kind) : `/uploads/${file.filename}`;
+  return { url, name: file.originalname || 'file', mime: file.mimetype, size: file.size };
 }
 
 /** Stores uploaded photos and returns their public URLs, in the same order. */
 export async function storeImages(files: Express.Multer.File[]): Promise<string[]> {
   if (!usesCloudinary) return files.map((f) => `/uploads/${f.filename}`);
-  return Promise.all(files.map(uploadToCloudinary));
+  return Promise.all(files.map((f) => uploadToCloudinary(f, 'image')));
 }

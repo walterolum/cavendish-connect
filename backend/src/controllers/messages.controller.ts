@@ -46,12 +46,19 @@ export class MessagesController {
 
   async sendMessage(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { content } = req.body;
-      const message = await messagesService.sendMessage(
-        req.user!.userId,
-        parseInt(req.params.id as string),
-        content
-      );
+      const { content, type, attachmentUrl, attachmentName, attachmentMime, attachmentSize, durationSec, latitude, longitude, liveMinutes } = req.body;
+      const message = await messagesService.sendMessage(req.user!.userId, parseInt(req.params.id as string), {
+        content: content ?? '',
+        type,
+        attachmentUrl,
+        attachmentName,
+        attachmentMime,
+        attachmentSize: attachmentSize != null ? Number(attachmentSize) : undefined,
+        durationSec: durationSec != null ? Number(durationSec) : undefined,
+        latitude: latitude != null ? Number(latitude) : undefined,
+        longitude: longitude != null ? Number(longitude) : undefined,
+        liveMinutes: liveMinutes != null ? Number(liveMinutes) : undefined,
+      });
       res.status(201).json(successResponse(message, 'Message sent'));
     } catch (error) {
       next(error);

@@ -29,6 +29,9 @@ import verificationsRoutes from './routes/verifications.routes';
 import eventsRoutes from './routes/events.routes';
 import ordersRoutes from './routes/orders.routes';
 import { maintenanceGuard } from './middleware/maintenance';
+import { connect } from './realtime/hub';
+import { verifyAccessToken } from './utils/helpers';
+import { authenticate as authenticateRequest } from './middleware/auth';
 import prisma from './config/database';
 import { getBrand, getPublicSettings } from './utils/settings';
 import { brandCss, isHexColor } from './utils/brandTheme';
@@ -54,6 +57,8 @@ app.use(helmet({
       workerSrc: ["'self'"],
       manifestSrc: ["'self'"],
       objectSrc: ["'none'"],
+      // Voice notes may be stored on Cloudinary.
+      mediaSrc: ["'self'", 'blob:', 'https://res.cloudinary.com'],
       // Embedded maps showing where an item, service or room is.
       frameSrc: ['https://maps.google.com', 'https://www.google.com'],
       frameAncestors: ["'none'"],
@@ -102,7 +107,8 @@ app.use(cors({
 }));
 
 // Compression
-app.use(compression());
+// Compression would hold back live events, so the realtime stream is skipped.
+app.use(compression({ filter: (req, res) => !req.path.startsWith('/api/v1/realtime') && compression.filter(req, res) }));
 
 // Logging
 if (config.nodeEnv !== 'test') {
@@ -113,9 +119,11 @@ if (config.nodeEnv !== 'test') {
 app.use('/uploads', express.static(path.resolve(config.storage.path), {
   maxAge: '30d',
   immutable: true,
-  setHeaders: (res) => {
+  setHeaders: (res, file) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('Content-Security-Policy', "default-src 'none'; img-src 'self'");
+    // PDFs open in the browser's own (isolated) viewer, which a strict policy would block;
+    // photos and voice notes get a locked-down policy.
+    if (!file.endsWith('.pdf')) res.setHeader('Content-Security-Policy', "default-src 'none'; img-src 'self'; media-src 'self'");
   },
 }));
 
@@ -177,6 +185,22 @@ apiRouter.get('/stats/public', async (_req, res, next) => {
   } catch (error) {
     next(error);
   }
+});
+// Live updates (new messages, typing, read receipts, presence, call signals).
+// EventSource can't send headers, so the short-lived access token comes in the URL.
+apiRouter.get('/realtime', (req, res) => {
+  try {
+    const decoded = verifyAccessToken(String(req.query.token ?? ''));
+    connect(decoded.userId, res);
+  } catch {
+    res.status(401).json({ success: false, message: 'Invalid or expired token' });
+  }
+});
+apiRouter.get('/realtime/ice', authenticateRequest, (_req, res) => {
+  // STUN finds a direct path between browsers; TURN relays when networks block that.
+  const servers: { urls: string | string[]; username?: string; credential?: string }[] = [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }];
+  if (process.env.TURN_URL) servers.push({ urls: process.env.TURN_URL.split(','), username: process.env.TURN_USERNAME, credential: process.env.TURN_CREDENTIAL });
+  res.json({ success: true, message: 'ICE servers', data: servers });
 });
 apiRouter.get('/settings/public', async (_req, res, next) => {
   try {
@@ -266,6 +290,8 @@ if (config.nodeEnv === 'production') {
   // data, so search engines and shared links show the right thing.
   app.use(async (req, res, next) => {
     if (req.method !== 'GET' || req.path.startsWith('/api') || req.path.startsWith('/uploads')) return next();
+    // A missing file (e.g. /images/x.png) is a real 404, not the app page.
+    if (/\.[a-z0-9]{2,5}$/i.test(req.path)) return next();
     res.setHeader('Cache-Control', 'no-cache');
     try {
       const { head } = await pageMeta(req);

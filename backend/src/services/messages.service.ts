@@ -1,6 +1,40 @@
 import prisma from '../config/database';
 import { NotFoundError, ForbiddenError, BadRequestError } from '../utils/errors';
+import { isOnline, publish } from '../realtime/hub';
 import { paginate } from '../utils/response';
+
+const SENDER = { id: true, username: true, firstName: true, lastName: true, avatar: true } as const;
+
+export interface MessageInput {
+  content?: string;
+  type?: 'TEXT' | 'IMAGE' | 'AUDIO' | 'FILE' | 'LOCATION' | 'CALL';
+  attachmentUrl?: string;
+  attachmentName?: string;
+  attachmentMime?: string;
+  attachmentSize?: number;
+  durationSec?: number;
+  latitude?: number;
+  longitude?: number;
+  /** For a live location: how long to keep sharing. */
+  liveMinutes?: number;
+}
+
+/** Attachments must be files we stored, never arbitrary links. */
+function isOwnUpload(url?: string) {
+  return !!url && /^(\/uploads\/[\w.-]+|https:\/\/res\.cloudinary\.com\/[^\s"'<>]+)$/.test(url);
+}
+
+/** Short text for notifications and the conversation list. */
+export function previewText(m: { type: string; content: string; durationSec?: number | null; liveUntil?: Date | null; attachmentName?: string | null }) {
+  switch (m.type) {
+    case 'IMAGE': return m.content ? `Photo: ${m.content}` : 'Sent a photo';
+    case 'AUDIO': return 'Voice note';
+    case 'FILE': return `Document: ${m.attachmentName ?? 'file'}`;
+    case 'LOCATION': return m.liveUntil ? 'Sharing live location' : 'Shared a location';
+    case 'CALL': return m.content || 'Call';
+    default: return m.content;
+  }
+}
 
 export class MessagesService {
   async createOrGetConversation(userId: number, otherUserId: number) {
@@ -112,7 +146,7 @@ export class MessagesService {
       return {
         id: conv.id,
         title: conv.title,
-        otherUser: otherParticipant?.user || null,
+        otherUser: otherParticipant?.user ? { ...otherParticipant.user, online: isOnline(otherParticipant.user.id) } : null,
         lastMessage,
         unreadCount: unreadByConversation.get(conv.id) || 0,
         createdAt: conv.createdAt,
@@ -136,7 +170,7 @@ export class MessagesService {
     });
 
     if (!conversation) throw new NotFoundError('Conversation');
-    if (!conversation.participants.some(p => p.userId === userId)) throw new ForbiddenError('Not a participant');
+    if (!conversation.participants.some((p) => p.userId === userId)) throw new ForbiddenError('Not a participant');
     const otherUser = conversation.participants.find(p => p.userId !== userId)?.user || null;
 
     const skip = (page - 1) * limit;
@@ -161,7 +195,7 @@ export class MessagesService {
       data: { lastReadAt: new Date() },
     });
 
-    await prisma.message.updateMany({
+    const marked = await prisma.message.updateMany({
       where: {
         conversationId,
         senderId: { not: userId },
@@ -169,54 +203,66 @@ export class MessagesService {
       },
       data: { isRead: true },
     });
+    // Tell the other person their messages were read (the ✓✓ ticks).
+    if (marked.count > 0 && otherUser) publish(otherUser.id, 'read', { conversationId, readerId: userId, at: new Date().toISOString() });
 
     // Fetched newest-first for paging; returned oldest-first for display.
     return {
-      conversation: { id: conversation.id, otherUser },
+      conversation: { id: conversation.id, otherUser: otherUser ? { ...otherUser, online: isOnline(otherUser.id) } : null },
       messages: messages.reverse(),
       meta: paginate(total, page, limit),
     };
   }
 
-  async sendMessage(userId: number, conversationId: number, content: string) {
+  async sendMessage(userId: number, conversationId: number, input: string | MessageInput) {
+    const data: MessageInput = typeof input === 'string' ? { content: input } : input;
+    const type = data.type ?? 'TEXT';
     const conversation = await prisma.conversation.findUnique({
       where: { id: conversationId },
-      include: { participants: { where: { userId } } },
+      include: { participants: { select: { userId: true } } },
     });
 
     if (!conversation) throw new NotFoundError('Conversation');
-    if (conversation.participants.length === 0) throw new ForbiddenError('Not a participant');
+    if (!conversation.participants.some((p) => p.userId === userId)) throw new ForbiddenError('Not a participant');
+    if (type === 'TEXT' && !data.content?.trim()) throw new BadRequestError('Message is empty');
+    if (['IMAGE', 'AUDIO', 'FILE'].includes(type) && !isOwnUpload(data.attachmentUrl)) {
+      throw new BadRequestError('Attachment must be uploaded first');
+    }
+    if (type === 'LOCATION' && (data.latitude == null || data.longitude == null)) throw new BadRequestError('Location is missing');
 
     const message = await prisma.message.create({
       data: {
         conversationId,
         senderId: userId,
-        content,
+        type,
+        content: (data.content ?? '').trim(),
+        attachmentUrl: data.attachmentUrl ?? null,
+        attachmentName: data.attachmentName?.slice(0, 180) ?? null,
+        attachmentMime: data.attachmentMime ?? null,
+        attachmentSize: data.attachmentSize ?? null,
+        durationSec: data.durationSec ?? null,
+        latitude: data.latitude ?? null,
+        longitude: data.longitude ?? null,
+        liveUntil: data.liveMinutes ? new Date(Date.now() + data.liveMinutes * 60_000) : null,
       },
-      include: {
-        sender: {
-          select: { id: true, username: true, firstName: true, lastName: true, avatar: true },
-        },
-      },
+      include: { sender: { select: SENDER } },
     });
 
-    await prisma.conversation.update({
-      where: { id: conversationId },
-      data: { updatedAt: new Date() },
-    });
+    await prisma.conversation.update({ where: { id: conversationId }, data: { updatedAt: new Date() } });
 
-    const participants = await prisma.conversationParticipant.findMany({
-      where: { conversationId, userId: { not: userId } },
-    });
+    const others = conversation.participants.map((p) => p.userId).filter((id) => id !== userId);
+    // Live delivery to everyone in the chat, including the sender's other tabs.
+    publish([...others, userId], 'message', { conversationId, message });
 
-    for (const participant of participants) {
+    const preview = previewText(message);
+    for (const id of others) {
       await prisma.notification.create({
         data: {
-          userId: participant.userId,
+          userId: id,
           actorId: userId,
           type: 'NEW_MESSAGE',
-          title: 'New message',
-          message: content.substring(0, 200),
+          title: `New message from ${message.sender.firstName}`,
+          message: preview.substring(0, 200),
           targetType: 'CONVERSATION',
           targetId: conversationId,
         },
@@ -224,6 +270,43 @@ export class MessagesService {
     }
 
     return message;
+  }
+
+  private async participantIds(userId: number, conversationId: number) {
+    const rows = await prisma.conversationParticipant.findMany({ where: { conversationId }, select: { userId: true } });
+    if (!rows.some((r) => r.userId === userId)) throw new ForbiddenError('Not a participant');
+    return rows.map((r) => r.userId).filter((id) => id !== userId);
+  }
+
+  /** "Walter is typing…" */
+  async typing(userId: number, conversationId: number) {
+    publish(await this.participantIds(userId, conversationId), 'typing', { conversationId, userId });
+  }
+
+  /** Call signalling (ring, answer, network details, hang up) between the two people in a chat. */
+  async signal(userId: number, conversationId: number, payload: Record<string, unknown>) {
+    const others = await this.participantIds(userId, conversationId);
+    const from = await prisma.user.findUnique({ where: { id: userId }, select: SENDER });
+    publish(others, 'call', { ...payload, conversationId, from });
+    return { delivered: others.some((id) => isOnline(id)) };
+  }
+
+  /** Moves the pin of a live location while it is being shared. */
+  async updateLiveLocation(userId: number, messageId: number, latitude: number, longitude: number) {
+    const msg = await prisma.message.findUnique({ where: { id: messageId } });
+    if (!msg || msg.senderId !== userId || msg.type !== 'LOCATION') throw new NotFoundError('Live location');
+    if (!msg.liveUntil || msg.liveUntil < new Date()) throw new BadRequestError('Live sharing has ended');
+    const updated = await prisma.message.update({ where: { id: messageId }, data: { latitude, longitude }, include: { sender: { select: SENDER } } });
+    publish([...(await this.participantIds(userId, msg.conversationId)), userId], 'message:update', { conversationId: msg.conversationId, message: updated });
+    return updated;
+  }
+
+  async stopLiveLocation(userId: number, messageId: number) {
+    const msg = await prisma.message.findUnique({ where: { id: messageId } });
+    if (!msg || msg.senderId !== userId || msg.type !== 'LOCATION') throw new NotFoundError('Live location');
+    const updated = await prisma.message.update({ where: { id: messageId }, data: { liveUntil: new Date() }, include: { sender: { select: SENDER } } });
+    publish([...(await this.participantIds(userId, msg.conversationId)), userId], 'message:update', { conversationId: msg.conversationId, message: updated });
+    return updated;
   }
 
   async getUnreadCount(userId: number) {

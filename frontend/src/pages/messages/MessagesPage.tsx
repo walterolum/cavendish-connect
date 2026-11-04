@@ -1,8 +1,9 @@
+import { useLiveStore } from '../../lib/realtime';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { FiMessageCircle, FiSearch } from 'react-icons/fi';
-import { messagesApi } from '../../services/engagement.service';
+import { messagesApi, messagePreview } from '../../services/engagement.service';
 import { getErrorMessage } from '../../lib/api';
 import { formatRelativeTime, cn } from '../../lib/utils';
 import { useDocumentTitle } from '../../lib/hooks';
@@ -15,6 +16,8 @@ import { Page, PageHeader } from '../../components/ui/page';
 import { EmptyState, ErrorState, ListSkeleton } from '../../components/ui/loading';
 
 export default function MessagesPage() {
+  const online = useLiveStore((st) => st.online);
+  const typing = useLiveStore((st) => st.typing);
   useDocumentTitle('Messages');
   const me = useAuthStore((s) => s.user);
   const [filter, setFilter] = useState('');
@@ -77,7 +80,12 @@ export default function MessagesPage() {
                     to={`/messages/${c.id}`}
                     className={cn('flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-gray-50 sm:px-5', unreadHere && 'bg-brand-50/40')}
                   >
-                    <Avatar person={c.otherUser} size="md" />
+                    <span className="relative shrink-0">
+                      <Avatar person={c.otherUser} size="md" />
+                      {c.otherUser && (online[c.otherUser.id] ?? c.otherUser.online) && (
+                        <span className="absolute right-0 bottom-0 h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-white" aria-label="Online" />
+                      )}
+                    </span>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-baseline justify-between gap-2">
                         <p className={cn('truncate text-sm', unreadHere ? 'font-semibold text-gray-900' : 'font-medium text-gray-800')}>
@@ -89,8 +97,14 @@ export default function MessagesPage() {
                       </div>
                       <div className="mt-0.5 flex items-center justify-between gap-2">
                         <p className={cn('truncate text-sm', unreadHere ? 'text-gray-800' : 'text-gray-500')}>
-                          {mine && <span className="text-gray-400">You: </span>}
-                          {c.lastMessage?.content ?? 'Say hello 👋'}
+                          {(typing[c.id] ?? 0) > Date.now() ? (
+                            <span className="font-medium text-emerald-600">typing…</span>
+                          ) : (
+                            <>
+                              {mine && <span className="text-gray-400">You: </span>}
+                              {c.lastMessage ? messagePreview(c.lastMessage) : 'Say hello 👋'}
+                            </>
+                          )}
                         </p>
                         {unreadHere && (
                           <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-brand-600 px-1.5 text-[11px] font-bold text-white tabular-nums">
